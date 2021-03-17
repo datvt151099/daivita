@@ -7,6 +7,7 @@
  * LICENSE.txt file in the root directory of this source tree.
  */
 
+import './dotenv';
 import path from 'path';
 import express from 'express';
 import cookieParser from 'cookie-parser';
