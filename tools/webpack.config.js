@@ -249,7 +249,7 @@ const config = {
         : [
             {
               test: resolvePath(
-                'node_modules/react-deep-force-update/lib/index.js',
+                'node_modules/react-deep-force-update/lib/schema.js',
               ),
               loader: 'null-loader',
             },

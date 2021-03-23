@@ -1,28 +1,36 @@
-/**
- * React Starter Kit (https://www.reactstarterkit.com/)
- *
- * Copyright © 2014-present Kriasoft, LLC. All rights reserved.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.txt file in the root directory of this source tree.
- */
+import { makeExecutableSchema } from 'graphql-tools';
+import { merge } from 'lodash';
+import * as user from './graphql/User/schema';
 
-import {
-  GraphQLSchema as Schema,
-  GraphQLObjectType as ObjectType,
-} from 'graphql';
+const Query = [
+  `
+  type Query {
+    ${user.queries}
+  }
+  `
+]
 
-import me from './queries/me';
-import news from './queries/news';
+const Mutation = [
+  `
+  type Mutation {
+    ${user.mutations}
+  }
+  `
+]
 
-const schema = new Schema({
-  query: new ObjectType({
-    name: 'Query',
-    fields: {
-      me,
-      news,
-    },
-  }),
+const resolvers = merge(
+  user.resolvers,
+);
+
+const typeDefs = [
+  ...user.schema,
+  ...Query,
+  ...Mutation,
+]
+
+export default makeExecutableSchema({
+  typeDefs,
+  resolvers,
+  // schemaDirectives: directives,
+  ...(__DEV__ ? { log: e => console.error(e.stack) } : {}),
 });
-
-export default schema;

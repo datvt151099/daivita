@@ -7,7 +7,7 @@ represented as an object with properties of `path` (a parametrized URL path stri
 (a function), and optionally `children` (a list of sub-routes, each of which is a route object).
 The `action` function returns anything - a string, a React component, etc. For example:
 
-#### `src/routes/index.js`
+#### `src/routes/schema.js`
 
 ```js
 export default [

@@ -7,7 +7,7 @@ branch instead as it also includes Redux.
 
 ### Creating Actions
 
-1.  Go to `src/constants/index.js` and define action name there.
+1.  Go to `src/constants/schema.js` and define action name there.
 
 2.  Go to `src/actions/` and create file with appropriate name. You can copy
     `src/actions/runtime.js` as a template.
@@ -34,7 +34,7 @@ branch instead as it also includes Redux.
       For example, when you store timestamp, pass it into _action payload_.
       If you call REST API, do it in action. _Never do this in reducer!_
 
-2.  Edit [`src/reducers/index.js`](https://github.com/kriasoft/react-starter-kit/tree/feature/redux/src/reducers/index.js), import your reducer and add it to root reducer created by
+2.  Edit [`src/reducers/schema.js`](https://github.com/kriasoft/react-starter-kit/tree/feature/redux/src/reducers/index.js), import your reducer and add it to root reducer created by
     [`combineReducers`](http://redux.js.org/docs/api/combineReducers.html)
 
 ### Connecting Components
