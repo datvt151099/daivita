@@ -1,22 +1,24 @@
-import types from './type.graphql';
+import type from './type.graphql';
+import {getUsers, getUser} from "./resolvers";
+import {addUser} from "./mutations";
 
-export const schema = [types];
+export const schema = [type];
 
 export const queries = [
   'getUsers: [User]',
-  'user(id: String!): User',
+  'getUser(id: String!): User',
 ];
 
 export const mutations = [
-  'addUser(input: UserInfo): Boolean',
+  'addUser(input: UserInfo): Status',
 ];
 
 export const resolvers = {
-  Query: {
-    getUsers: () => ([{}]),
-    user: () => {},
+  RootQuery: {
+    getUsers,
+    getUser,
   },
   Mutation: {
-    addUser: () => true,
+    addUser,
   },
 };

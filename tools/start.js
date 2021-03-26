@@ -11,8 +11,6 @@ import path from 'path';
 import express from 'express';
 import browserSync from 'browser-sync';
 import webpack from 'webpack';
-import webpackDevMiddleware from 'webpack-dev-middleware';
-import webpackHotMiddleware from 'webpack-hot-middleware';
 import errorOverlayMiddleware from 'react-dev-utils/errorOverlayMiddleware';
 import webpackConfig from './webpack.config';
 import run, { format } from './run';
@@ -70,24 +68,6 @@ async function start() {
   server.use(errorOverlayMiddleware());
   server.use(express.static(path.resolve(__dirname, '../public')));
 
-  // Configure client-side hot module replacement
-  const clientConfig = webpackConfig.find(config => config.name === 'client');
-  clientConfig.entry.client = ['./tools/lib/webpackHotDevClient']
-    .concat(clientConfig.entry.client)
-    .sort((a, b) => b.includes('polyfill') - a.includes('polyfill'));
-  clientConfig.output.filename = clientConfig.output.filename.replace(
-    'chunkhash',
-    'hash',
-  );
-  clientConfig.output.chunkFilename = clientConfig.output.chunkFilename.replace(
-    'chunkhash',
-    'hash',
-  );
-  clientConfig.module.rules = clientConfig.module.rules.filter(
-    x => x.loader !== 'null-loader',
-  );
-  clientConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
-
   // Configure server-side hot module replacement
   const serverConfig = webpackConfig.find(config => config.name === 'server');
   serverConfig.output.hotUpdateMainFilename = 'updates/[hash].hot-update.json';
@@ -101,34 +81,14 @@ async function start() {
   // Configure compilation
   await run(clean);
   const multiCompiler = webpack(webpackConfig);
-  const clientCompiler = multiCompiler.compilers.find(
-    compiler => compiler.name === 'client',
-  );
   const serverCompiler = multiCompiler.compilers.find(
     compiler => compiler.name === 'server',
-  );
-  const clientPromise = createCompilationPromise(
-    'client',
-    clientCompiler,
-    clientConfig,
   );
   const serverPromise = createCompilationPromise(
     'server',
     serverCompiler,
     serverConfig,
   );
-
-  // https://github.com/webpack/webpack-dev-middleware
-  server.use(
-    webpackDevMiddleware(clientCompiler, {
-      publicPath: clientConfig.output.publicPath,
-      logLevel: 'silent',
-      watchOptions,
-    }),
-  );
-
-  // https://github.com/glenjamin/webpack-hot-middleware
-  server.use(webpackHotMiddleware(clientCompiler, { log: false }));
 
   let appPromise;
   let appPromiseResolve;
@@ -199,7 +159,6 @@ async function start() {
   });
 
   // Wait until both client-side and server-side bundles are ready
-  await clientPromise;
   await serverPromise;
 
   const timeStart = new Date();

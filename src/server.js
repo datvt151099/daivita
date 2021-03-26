@@ -17,16 +17,8 @@ import { formatError } from './data/graphql/baseResolver';
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
-  // send entire app down. Process manager will restart it
   process.exit(1);
 });
-
-//
-// Tell any CSS tooling (such as Material UI) to use all vendor prefixes if the
-// user agent is not known.
-// -----------------------------------------------------------------------------
-global.navigator = global.navigator || {};
-global.navigator.userAgent = global.navigator.userAgent || 'all';
 
 const app = express();
 
@@ -98,7 +90,7 @@ app.use(
     graphiql: __DEV__,
     rootValue: { request: req },
     pretty: __DEV__,
-    formatError,
+    customFormatErrorFn: formatError,
   })),
 );
 
