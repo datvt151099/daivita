@@ -7,6 +7,6 @@ const schema = new mongoose.Schema({
   name: { type: String },
   picture: String,
   role: String,
-});
+}, {collection: 'user'});
 
 export default mongoose.model('User', schema);

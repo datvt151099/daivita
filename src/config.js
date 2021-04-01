@@ -43,8 +43,10 @@ module.exports = {
 
   // Authentication
   auth: {
-    jwt: { secret: process.env.JWT_SECRET || 'React Starter Kit' },
-
+    jwt: {
+      secret: process.env.JWT_SECRET || 'DAIVITA_JWT_CECRET',
+      expiresIn: 60 * 60 * 24 * 30,
+    },
     // https://developers.facebook.com/
     facebook: {
       id: process.env.FACEBOOK_APP_ID || '186244551745631',
