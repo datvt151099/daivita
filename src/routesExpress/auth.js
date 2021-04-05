@@ -8,7 +8,7 @@ const router = new Router();
 // eslint-disable-next-line consistent-return
 router.post('/login', async (req, res) => {
   // Read username and password from request body
-  const { username } = req.body;
+  const { username, password } = req.body;
 
   try {
     const user = await User.findOne({
@@ -16,6 +16,7 @@ router.post('/login', async (req, res) => {
         {phone: username},
         {email: username}
       ],
+      password,
     });
 
     if (user) {
@@ -38,5 +39,35 @@ router.post('/login', async (req, res) => {
   // Filter user from the users array by username and password
 
 });
+
+router.post("/register", async (req, res) => {
+  const {
+    phone,
+    email,
+    name,
+    password
+  } = req.body;
+
+  const user = await User.findOne({
+    $or: [
+      {phone},
+      {email}
+    ],
+  })
+  if (user) return res.status(200).send({
+    status: false,
+    message: "Tài khoản đã tồn tại"
+  });
+  await User.create({
+    phone,
+    email,
+    name,
+    password
+  });
+  return res.status(200).send({
+    status: true,
+    message: "Đăng ký thành công"
+  })
+})
 
 export default router;

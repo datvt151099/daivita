@@ -128,7 +128,8 @@ const promise = Promise.resolve().then(async () => {
         created: new Date(),
         phone: '0962940047',
         name: 'DatVT',
-        role: 'admin'
+        role: 'admin',
+        password: 'admin'
       },
     },
     {

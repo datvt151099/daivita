@@ -5,8 +5,9 @@ const schema = new mongoose.Schema({
   phone: { type: String, unique: true },
   email: { type: String },
   name: { type: String },
-  picture: String,
-  role: String,
+  picture: { type: String },
+  role: { type: String },
+  password: { type: String}
 }, {collection: 'user'});
 
 export default mongoose.model('User', schema);
