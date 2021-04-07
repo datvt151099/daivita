@@ -1,5 +1,4 @@
 import './dotenv';
-import Promise from 'bluebird';
 import path from 'path';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -11,7 +10,6 @@ import jwt from 'jsonwebtoken';
 import PrettyError from 'pretty-error';
 import routesExpress from './routesExpress';
 import config from './config';
-import User from "./data/models/User";
 import './data/mongoose';
 import schema from './data/schema';
 import { formatError } from './data/graphql/baseResolver';
@@ -117,32 +115,9 @@ pe.skipPackage('express');
 
 //
 // Launch the server
-// -----------------------------------------------------------------------------
-const promise = Promise.resolve().then(async () => {
-  const user = await User.findOneAndUpdate(
-    {
-      email: 'datvt151099@gmail.com'
-    },
-    {
-      $setOnInsert: {
-        created: new Date(),
-        phone: '0962940047',
-        name: 'DatVT',
-        role: 'admin',
-        password: 'admin'
-      },
-    },
-    {
-      upsert: true,
-    },
-  );
-  return user;
-});
 if (!module.hot) {
-  promise.then(() => {
-    app.listen(config.port, () => {
-      console.info(`The server is running at http://localhost:${config.port}/`);
-    });
+  app.listen(config.port, () => {
+    console.info(`The server is running at port=${config.port}`);
   });
 }
 
