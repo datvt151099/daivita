@@ -4,3 +4,9 @@ type User {
   phone: String
   email: String
 }
+
+input UserInfo {
+  name: String
+  phone: String
+  email: String
+}

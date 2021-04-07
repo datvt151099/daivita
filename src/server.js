@@ -4,11 +4,12 @@ import path from 'path';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
-import expressJwt, { UnauthorizedError as Jwt401Error } from 'express-jwt';
+// import expressJwt, { UnauthorizedError as Jwt401Error } from 'express-jwt';
+// import passport from './passport';
 import expressGraphQL from 'express-graphql';
 import jwt from 'jsonwebtoken';
 import PrettyError from 'pretty-error';
-import passport from './passport';
+import routesExpress from './routesExpress';
 import config from './config';
 import User from "./data/models/User";
 import './data/mongoose';
@@ -17,16 +18,8 @@ import { formatError } from './data/graphql/baseResolver';
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
-  // send entire app down. Process manager will restart it
   process.exit(1);
 });
-
-//
-// Tell any CSS tooling (such as Material UI) to use all vendor prefixes if the
-// user agent is not known.
-// -----------------------------------------------------------------------------
-global.navigator = global.navigator || {};
-global.navigator.userAgent = global.navigator.userAgent || 'all';
 
 const app = express();
 
@@ -47,61 +40,74 @@ app.use(bodyParser.json());
 //
 // Authentication
 // -----------------------------------------------------------------------------
-app.use(
-  expressJwt({
-    secret: config.auth.jwt.secret,
-    credentialsRequired: false,
-    getToken: req => req.cookies.id_token,
-  }),
-);
-// Error handler for express-jwt
-app.use((err, req, res, next) => {
-  // eslint-disable-line no-unused-vars
-  if (err instanceof Jwt401Error) {
-    console.error('[express-jwt-error]', req.cookies.id_token);
-    // `clearCookie`, otherwise user can't use web-app until cookie expires
-    res.clearCookie('id_token');
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+
+    // eslint-disable-next-line consistent-return
+    jwt.verify(token, config.auth.jwt.secret, (err, user) => {
+      if (err) {
+        return res.status(403).send('Forbidden');
+      }
+
+      req.user = user;
+      next();
+    });
+  } else {
+    res.status(401).send('Unauthorized');
   }
-  next(err);
-});
+};
 
-app.use(passport.initialize());
+// app.use(
+//   expressJwt({
+//     secret: config.auth.jwt.secret,
+//     credentialsRequired: false,
+//     getToken: req => req.cookies.id_token,
+//   }),
+// );
+// Error handler for express-jwt
 
-app.get(
-  '/login/facebook',
-  passport.authenticate('facebook', {
-    scope: ['email', 'user_location'],
-    session: false,
-  }),
-);
-app.get(
-  '/login/facebook/return',
-  passport.authenticate('facebook', {
-    failureRedirect: '/login',
-    session: false,
-  }),
-  (req, res) => {
-    const expiresIn = 60 * 60 * 24 * 180; // 180 days
-    const token = jwt.sign(req.user, config.auth.jwt.secret, { expiresIn });
-    res.cookie('id_token', token, { maxAge: 1000 * expiresIn, httpOnly: true });
-    res.redirect('/');
-  },
-);
+// app.use(passport.initialize());
+//
+// app.get(
+//   '/login/facebook',
+//   passport.authenticate('facebook', {
+//     scope: ['email', 'user_location'],
+//     session: false,
+//   }),
+// );
+// app.get(
+//   '/login/facebook/return',
+//   passport.authenticate('facebook', {
+//     failureRedirect: '/login',
+//     session: false,
+//   }),
+//   (req, res) => {
+//     const expiresIn = 60 * 60 * 24 * 180; // 180 days
+//     const token = jwt.sign(req.user, config.auth.jwt.secret, { expiresIn });
+//     res.cookie('id_token', token, { maxAge: 1000 * expiresIn, httpOnly: true });
+//     res.redirect('/');
+//   },
+// );
 
 //
 // Register API middleware
 // -----------------------------------------------------------------------------
 app.use(
   '/graphql',
+  authenticateJWT,
   expressGraphQL(req => ({
     schema,
     graphiql: __DEV__,
     rootValue: { request: req },
     pretty: __DEV__,
-    formatError,
+    customFormatErrorFn: formatError,
   })),
 );
 
+app.use('/', routesExpress);
 //
 // Error handling
 // -----------------------------------------------------------------------------
@@ -122,7 +128,8 @@ const promise = Promise.resolve().then(async () => {
         created: new Date(),
         phone: '0962940047',
         name: 'DatVT',
-        role: 'admin'
+        role: 'admin',
+        password: 'admin'
       },
     },
     {

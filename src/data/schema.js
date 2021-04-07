@@ -1,10 +1,11 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import { merge } from 'lodash';
+import type from './graphql/type.graphql';
 import * as user from './graphql/User/schema';
 
-const Query = [
+const RootQuery = [
   `
-  type Query {
+  type RootQuery {
     ${user.queries}
   }
   `
@@ -18,13 +19,24 @@ const Mutation = [
   `
 ]
 
+const SchemaDefinition = [
+  `
+  schema {
+    query: RootQuery
+    mutation: Mutation
+  }
+`,
+];
+
 const resolvers = merge(
   user.resolvers,
 );
 
 const typeDefs = [
+  type,
   ...user.schema,
-  ...Query,
+  ...SchemaDefinition,
+  ...RootQuery,
   ...Mutation,
 ]
 
