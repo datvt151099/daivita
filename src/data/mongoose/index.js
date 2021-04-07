@@ -6,21 +6,9 @@ const mongoUri = process.env.MONGO_URI;
 // eslint-disable-next-line no-console
 console.log('Connecting to ', process.env.NODE_ENV, mongoUri);
 mongoose.Promise = Promise;
-
 mongoose.set('debug', process.env.MONGOOSE_DEBUG === 'on');
-
-if (mongoose.connection.readyState !== 1) {
-  mongoose.connect(mongoUri, {
-    useNewUrlParser: true,
-    autoIndex: process.env.AUTO_INDEX && process.env.AUTO_INDEX === 'true',
-  });
-}
-Object.keys(mongoose.connection.models).forEach(key => {
-  // check also if property is not inherited from prototype
-  if (Object.prototype.hasOwnProperty.call(mongoose.connection.models, key)) {
-    // eslint-disable-next-line security/detect-object-injection
-    delete mongoose.connection.models[key];
-  }
+mongoose.connect(mongoUri, {
+  useNewUrlParser: true,
 });
 
 export default mongoose;
