@@ -8568,11 +8568,6 @@ moment@^2.29.1:
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
   integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
 
-mongo-uri-builder@^3.2.2:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/mongo-uri-builder/-/mongo-uri-builder-3.2.2.tgz#9d7a58abca1107dba8f2a6fabdfaaf57d5ba385f"
-  integrity sha512-B9f+lysXlmK+BRVQQtvcGstmThrWCwdP+llM4j6UIhmVYfQjAjKKrz1Juhn0hMFtRl3h/ZP9k2DNdvQ1a67CxA==
-
 mongodb@3.6.4:
   version "3.6.4"
   resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-3.6.4.tgz#ca59fd65b06831308262372ef9df6b78f9da97be"
