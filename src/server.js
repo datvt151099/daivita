@@ -117,7 +117,7 @@ pe.skipPackage('express');
 // Launch the server
 if (!module.hot) {
   app.listen(config.port, () => {
-    console.info(`The server is running at http://localhost:${config.port}/`);
+    console.info(`The server is running at port=${config.port}`);
   });
 }
 
