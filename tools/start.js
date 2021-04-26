@@ -170,22 +170,22 @@ async function start() {
   appPromiseIsResolved = true;
   appPromiseResolve();
 
-  // const port = process.env.PORT ? Number(process.env.PORT) : undefined;
+  const port = process.env.PORT ? Number(process.env.PORT) : undefined;
 
-  // // Launch the development server with Browsersync and HMR
-  // await new Promise((resolve, reject) =>
-  //   browserSync.create().init(
-  //     {
-  //       // https://www.browsersync.io/docs/options
-  //       server: 'src/server.js',
-  //       middleware: [server],
-  //       open: !process.argv.includes('--silent'),
-  //       ...(isDebug ? {} : { notify: false, ui: false }),
-  //       ...(port ? { port } : null),
-  //     },
-  //     (error, bs) => (error ? reject(error) : resolve(bs)),
-  //   ),
-  // );
+  // Launch the development server with Browsersync and HMR
+  await new Promise((resolve, reject) =>
+    browserSync.create().init(
+      {
+        // https://www.browsersync.io/docs/options
+        server: 'src/server.js',
+        middleware: [server],
+        open: false,
+        ...(isDebug ? {} : { notify: false, ui: false }),
+        ...(port ? { port } : null),
+      },
+      (error, bs) => (error ? reject(error) : resolve(bs)),
+    ),
+  );
 
   const timeEnd = new Date();
   const time = timeEnd.getTime() - timeStart.getTime();
