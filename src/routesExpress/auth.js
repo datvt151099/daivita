@@ -1,13 +1,26 @@
+/* eslint-disable no-console, consistent-return */
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import User from "../data/models/User";
+import {ERROR_MESSAGE_SERVER} from "../constants";
 
 const router = new Router();
 
-// eslint-disable-next-line consistent-return
+const generateToken = (user) => {
+  const { expiresIn } = config.auth.jwt;
+  const accessToken = jwt.sign(JSON.parse(JSON.stringify(user)), config.auth.jwt.secret, {expiresIn});
+  return {
+    accessToken,
+    expiresIn,
+  }
+}
+
 router.post('/login', async (req, res) => {
-  // Read username and password from request body
+  const result = {
+    status: false,
+    message: ''
+  };
   const { username, password } = req.body;
 
   try {
@@ -16,58 +29,70 @@ router.post('/login', async (req, res) => {
         {phone: username},
         {email: username}
       ],
-      password,
     });
 
     if (user) {
-      // Generate an access token
-      const accessToken = jwt.sign(JSON.parse(JSON.stringify(user)), config.auth.jwt.secret, {expiresIn: config.auth.jwt.expiresIn});
-
-      res.status(200).send({
-        status: true,
-        accessToken
-      });
+      const isMatch = user.comparePassword(password);
+      if (isMatch) {
+        const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(user)));
+        result.status = true;
+        result.accessToken = accessToken;
+        result.expiresIn = expiresIn;
+        result.message = "Đăng nhập thành công!"
+      } else {
+        result.message = "Sai mật khẩu!"
+      }
     } else {
-      res.status(401).send({
-        status: false,
-        message: 'Username or password incorrect'
-      });
+      result.message = "Tài khoản không tồn tại!"
     }
   } catch (e) {
-    return res.status(500).send(e.message);
+    result.message = ERROR_MESSAGE_SERVER;
   }
-  // Filter user from the users array by username and password
-
+  res.status(200).send(result);
 });
 
 router.post("/register", async (req, res) => {
   const {
     phone,
     email,
-    name,
-    password
+    fullName,
+    password,
+    sex
   } = req.body;
 
-  const user = await User.findOne({
-    $or: [
-      {phone},
-      {email}
-    ],
-  })
-  if (user) return res.status(200).send({
+  const result = {
     status: false,
-    message: "Tài khoản đã tồn tại"
-  });
-  await User.create({
-    phone,
-    email,
-    name,
-    password
-  });
-  return res.status(200).send({
-    status: true,
-    message: "Đăng ký thành công"
-  })
+    message: ''
+  };
+
+  try {
+    const user = await User.findOne({
+      $or: [
+        {phone},
+        {email}
+      ],
+    })
+    if (user) result.message = "Tài khoản đã tồn tại!";
+    else {
+      const newUser = new User({
+        phone,
+        email,
+        fullName,
+        password,
+        sex
+      })
+      await newUser.save();
+      const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
+      result.status = true;
+      result.accessToken = accessToken;
+      result.expiresIn = expiresIn;
+      result.message = "Đăng ký thành công!";
+    }
+  } catch (e) {
+    console.log(JSON.stringify(e))
+    result.message = ERROR_MESSAGE_SERVER;
+  }
+  res.status(200).send(result);
 })
 
 export default router;

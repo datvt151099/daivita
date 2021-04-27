@@ -17,6 +17,12 @@ mongoose.Promise = Promise;
 mongoose.set('debug', process.env.MONGOOSE_DEBUG === 'on');
 console.log('Connecting to', process.env.NODE_ENV, mongoUri);
 mongoose.connect(mongoUri, options);
+mongoose.connection.on('connected', () => {
+  console.log("Connected to mongo instance")
+})
+mongoose.connection.on('error', () => {
+  console.log("Error connecting to mongo")
+})
 if (mongoose.connection.readyState !== 1) {
   mongoose.connect(mongoUri, options);
 }
