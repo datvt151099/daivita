@@ -1,3 +1,4 @@
-import auth from './auth';
+import user from './user';
+import health from './health';
 
-export default [auth];
+export default [user, health];

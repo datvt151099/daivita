@@ -6,11 +6,15 @@ const schema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
   phone: { type: String, unique: true, required: true },
   email: { type: String },
+  birth: { type: String },
   fullName: { type: String },
+  diseaseType: { type: Number},
   picture: { type: String },
-  role: { type: String },
+  role: { type: Number },
+  inAccount: { type: Boolean },
   password: { type: String, required: true },
-  sex: {type: Number}
+  sex: {type: Number},
+  firebaseId: { type: String },
 }, {collection: 'user'});
 
 

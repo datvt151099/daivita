@@ -1,9 +1,12 @@
 /* eslint-disable no-console, consistent-return */
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+import moment from "moment";
 import config from '../config';
 import User from "../data/models/User";
-import {ERROR_MESSAGE_SERVER} from "../constants";
+import {ERROR_MESSAGE_SERVER, roles} from "../constants";
+// import Relationship from "../data/models/Relationship";
+import Health from "../data/models/Health";
 
 const router = new Router();
 
@@ -32,7 +35,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (user) {
-      const isMatch = user.comparePassword(password);
+      const isMatch = await user.comparePassword(password);
       if (isMatch) {
         const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(user)));
         result.status = true;
@@ -57,6 +60,10 @@ router.post("/register", async (req, res) => {
     email,
     fullName,
     password,
+    diseaseType,
+    role,
+    inAccount,
+    birth,
     sex
   } = req.body;
 
@@ -79,8 +86,22 @@ router.post("/register", async (req, res) => {
         email,
         fullName,
         password,
+        diseaseType,
+        role,
+        inAccount,
+        birth,
         sex
-      })
+      });
+
+      if (role === roles.patient) {
+        await Health.create({
+          createdAt: +moment().format('X'),
+          userId: newUser._id,
+          age: moment().diff(birth, 'years'),
+          diseaseType,
+          fullName,
+        })
+      }
       await newUser.save();
       const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
       result.status = true;
@@ -94,5 +115,38 @@ router.post("/register", async (req, res) => {
   }
   res.status(200).send(result);
 })
+
+router.post("/import", async (req, res) => {
+  // await Relationship.insertMany([{
+  //   userOneId: "608d2422970db60b4d000d1e",
+  //   userTwoId: "608d2422970db60b4d000d1d",
+  //   actionUserId: "608d2422970db60b4d000d1d",
+  //   status: 1,
+  // }, {
+  //   userOneId: "608d2422970db60b4d000d1e",
+  //   userTwoId: "608d2422970db60b4d000d1c",
+  //   actionUserId: "608d2422970db60b4d000d1c",
+  //   status: 1,
+  // }])
+  await Health.insertMany([
+    {
+      currentIndex: 102.4,
+      userId: '608d2422970db60b4d000d1d',
+      fullName: "Nguyễn Hà Quang",
+      age: 21,
+      diseaseType: 2,
+      avgIndex: 102.4
+    },
+    {
+      currentIndex: 102.4,
+      userId: '608d2422970db60b4d000d1c',
+      fullName: "Võ Tấn Đạt",
+      age: 21,
+      diseaseType: 2,
+      avgIndex: 102.4
+    }
+  ])
+  res.send(true);
+});
 
 export default router;

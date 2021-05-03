@@ -9,6 +9,7 @@ import expressGraphQL from 'express-graphql';
 import jwt from 'jsonwebtoken';
 import PrettyError from 'pretty-error';
 import routesExpress from './routesExpress';
+import auth from './routesExpress/auth';
 import config from './config';
 import './data/mongoose';
 import schema from './data/schema';
@@ -105,7 +106,8 @@ app.use(
   })),
 );
 
-app.use('/', routesExpress);
+app.use('/', auth);
+app.use('/api', authenticateJWT, routesExpress);
 //
 // Error handling
 // -----------------------------------------------------------------------------

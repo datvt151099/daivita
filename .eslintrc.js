@@ -47,6 +47,8 @@ module.exports = {
       },
     ],
 
+    'no-underscore-dangle': 'off',
+
     // Prefer destructuring from arrays and objects
     // http://eslint.org/docs/rules/prefer-destructuring
     'prefer-destructuring': [
