@@ -11,7 +11,7 @@ const checkPermission = async ({actionUserId, userTwoId, status}) => {
         { userOneId: userTwoId, userTwoId: actionUserId }
       ],
       status: { $ne: relationalStatus.accepted }
-    });
+    }) || {};
 
   } else if ( status === relationalStatus.accepted || status === relationalStatus.declined) {
     relationship = await Relationship.findOne({
