@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import moment from "moment";
+import * as _ from "lodash";
 import config from '../config';
 import User from "../data/models/User";
 import {ERROR_MESSAGE_SERVER, roles} from "../constants";
@@ -24,23 +25,20 @@ router.post('/login', async (req, res) => {
     status: false,
     message: ''
   };
-  const { username, password } = req.body;
+  const { phone, password } = req.body;
 
   try {
-    const user = await User.findOne({
-      $or: [
-        {phone: username},
-        {email: username}
-      ],
-    });
+    const user = await User.findOne({ phone });
 
     if (user) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
         const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(user)));
         result.status = true;
-        result.accessToken = accessToken;
-        result.expiresIn = expiresIn;
+        result.data = {
+          accessToken,
+          expiresIn
+        };
         result.message = "Đăng nhập thành công!"
       } else {
         result.message = "Sai mật khẩu!"
@@ -64,6 +62,7 @@ router.post("/register", async (req, res) => {
     role,
     inAccount,
     birth,
+    workHospital,
     sex
   } = req.body;
 
@@ -73,12 +72,7 @@ router.post("/register", async (req, res) => {
   };
 
   try {
-    const user = await User.findOne({
-      $or: [
-        {phone},
-        {email}
-      ],
-    })
+    const user = await User.findOne({phone});
     if (user) result.message = "Tài khoản đã tồn tại!";
     else {
       const newUser = new User({
@@ -90,6 +84,7 @@ router.post("/register", async (req, res) => {
         role,
         inAccount,
         birth,
+        workHospital,
         sex
       });
 
@@ -103,11 +98,66 @@ router.post("/register", async (req, res) => {
         })
       }
       await newUser.save();
-      const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
+      const { accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
       result.status = true;
-      result.accessToken = accessToken;
-      result.expiresIn = expiresIn;
+      result.data = {
+        accessToken,
+        expiresIn
+      };
       result.message = "Đăng ký thành công!";
+    }
+  } catch (e) {
+    console.log(JSON.stringify(e))
+    result.message = ERROR_MESSAGE_SERVER;
+  }
+  res.status(200).send(result);
+})
+
+router.post("/get-user-by-phone", async (req, res) => {
+  const {
+    phone,
+  } = req.body;
+
+  const result = {
+    status: false,
+    message: ''
+  };
+
+  try {
+    const user = await User.findOne({phone});
+    result.status = true;
+    result.data = user ? _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']) : user;
+  } catch (e) {
+    console.log(JSON.stringify(e))
+    result.message = ERROR_MESSAGE_SERVER;
+  }
+  res.status(200).send(result);
+})
+
+router.post("/forgot-password", async (req, res) => {
+  const {
+    phone,
+    password,
+    // firebaseId,
+  } = req.body;
+
+  const result = {
+    status: false,
+    message: ''
+  };
+
+  try {
+    const user = await User.findOne({
+      phone,
+      // firebaseId
+    });
+    if (!user) {
+      result.message = 'Số điện thoại chưa đăng ký tài khoản';
+    } else {
+      user.password = password;
+      await user.save();
+      result.status = true;
+      result.message = "Đổi mật khẩu thành công!"
     }
   } catch (e) {
     console.log(JSON.stringify(e))

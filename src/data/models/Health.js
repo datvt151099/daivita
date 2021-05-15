@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const schema = new mongoose.Schema({
   createdAt: { type: Number },
   currentIndex: { type: Number },
+  measureAt: { type: Number },
   userId: { type: String },
   fullName: { type: String },
   age: { type: Number },

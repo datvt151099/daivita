@@ -5,13 +5,12 @@ const schema = new mongoose.Schema({
   createdBy: { type: String },
   updatedAt: { type: Number },
   updatedBy: { type: String },
-  measureAt: { type: Number },
-  index: { type: Number },
+  etAt: { type: Number },
+  food: { type: String },
   userId: { type: String },
-  labels: [ Number ],
   note: { type: String },
-}, {collection: 'index'});
+}, {collection: 'meal'});
 
 schema.index({ userId: 1, measureAt: -1 }, { background: true });
 
-export default mongoose.model('Index', schema);
+export default mongoose.model('Meal', schema);

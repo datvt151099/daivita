@@ -36,27 +36,29 @@ const checkPermission = async ({actionUserId, userTwoId, status}) => {
   if (relationship) return true;
   return false;
 }
-export default async ({actionUserId, userTwoId, status}) => {
+export default async ({actionUserId, userTwoId, status, note}) => {
   const isMatch = await checkPermission({actionUserId, userTwoId, status});
   if (isMatch) {
-    await Relationship.findOneAndUpdate( {
-      $or: [
-        { userOneId: actionUserId, userTwoId },
-        { userOneId: userTwoId, userTwoId: actionUserId }
-      ]
-    }, {
-      $setOnInsert: {
-        userOneId: actionUserId,
-        userTwoId,
-        actionAt: +moment().format('X')
-      },
-      $set: {
-        actionUserId,
-        status
-      }
-    }, {
-      upsert: true
+    const relationship = await Relationship.findOne( {
+        $or: [
+          { userOneId: actionUserId, userTwoId },
+          { userOneId: userTwoId, userTwoId: actionUserId }
+        ]
+    }) || new Relationship({
+      userOneId: actionUserId,
+      userTwoId,
     });
+
+    relationship.actionUserId = actionUserId;
+    relationship.status = status;
+    relationship.actionAt = +moment().format('X');
+    if (relationship.userOneId === actionUserId) {
+      relationship.noteUserOne = note;
+    } else {
+      relationship.noteUserTwo = note;
+    }
+
+    await relationship.save();
     return true;
   };
   return false;

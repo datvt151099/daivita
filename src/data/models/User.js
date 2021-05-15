@@ -13,7 +13,8 @@ const schema = new mongoose.Schema({
   role: { type: Number },
   inAccount: { type: Boolean },
   password: { type: String, required: true },
-  sex: {type: Number},
+  sex: {type: Number },
+  workHospital: { type: String },
   firebaseId: { type: String },
 }, {collection: 'user'});
 

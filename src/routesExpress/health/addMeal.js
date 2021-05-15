@@ -1,20 +1,20 @@
 import moment from "moment";
-import Index from "../../data/models/Index";
+import Meal from "../../data/models/Meal";
 
 // TODO: chua kiem tra input
 
-const addIndex = async ({measureAt, index, userId, createdBy, updatedBy, labels, note}) => {
+const addMeal = async ({eatAt, food, userId, createdBy, updatedBy, labels, note}) => {
   const now = +moment().format('X');
   try {
-    await Index.create({
+    await Meal.create({
       updatedAt: now,
       createdAt: now,
-      measureAt,
       updatedBy,
       createdBy,
-      labels,
+      eatAt,
+      food,
       userId,
-      index,
+      labels,
       note
     })
     return true;
@@ -23,15 +23,15 @@ const addIndex = async ({measureAt, index, userId, createdBy, updatedBy, labels,
   }
 };
 
-export const updateIndex = async ({updatedBy, indexId ,measureAt, index, note}) => {
+export const updateIndex = async ({updatedBy, mealId, eatAt, food, note}) => {
   const now = +moment().format('X');
   try {
-    await Index.findOneAndUpdate({
-      _id: indexId
+    await Meal.findOneAndUpdate({
+      _id: mealId
     }, {
       $set: {
-        ...(measureAt && { measureAt }),
-        ...(index && { index }),
+        ...(eatAt && { eatAt }),
+        ...(food && { food }),
         ...(note && { note }),
         updatedAt: now,
         updatedBy
@@ -43,4 +43,4 @@ export const updateIndex = async ({updatedBy, indexId ,measureAt, index, note}) 
   }
 }
 
-export default addIndex;
+export default addMeal;

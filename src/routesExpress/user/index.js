@@ -12,6 +12,7 @@ router.post('/get-user', async (req, res) => {
   res.send(user);
 });
 
+
 router.post('/follow', async (req, res) => {
   const { userId } = req.body;
   const actionUserId = req.user._id;
@@ -21,9 +22,9 @@ router.post('/follow', async (req, res) => {
   };
   try{
     const status = await setRelationship({
-      actionUserId,
-      userTwoId: userId,
-      status: relationalStatus.pending
+      actionUserId: userId,
+      userTwoId: actionUserId,
+      status: relationalStatus.accepted
     });
     if (status) {
       result.status = true;
