@@ -66,7 +66,9 @@ router.post('/add-patient', async (req, res) => {
       inAccount: false,
       role: roles.patient,
       birth,
-      sex
+      sex,
+      phone,
+      password: 'test',
     });
     await patient.save();
     await Health.create({
@@ -190,7 +192,6 @@ router.post('/add-meal', async (req, res) => {
       note,
       labels
     });
-    await updateHealth(patientId);
     result.status = true;
     result.message = 'Thêm thức ăn thành công!'
   }

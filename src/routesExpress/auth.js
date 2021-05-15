@@ -59,8 +59,7 @@ router.post("/register", async (req, res) => {
     fullName,
     password,
     diseaseType,
-    role,
-    inAccount,
+    role = roles.doctor,
     birth,
     workHospital,
     sex
@@ -82,7 +81,7 @@ router.post("/register", async (req, res) => {
         password,
         diseaseType,
         role,
-        inAccount,
+        inAccount: true,
         birth,
         workHospital,
         sex
