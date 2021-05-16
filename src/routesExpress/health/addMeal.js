@@ -3,7 +3,7 @@ import Meal from "../../data/models/Meal";
 
 // TODO: chua kiem tra input
 
-const addMeal = async ({eatAt, food, userId, createdBy, updatedBy, labels, note}) => {
+const addMeal = async ({eatAt, food, patientId, createdBy, updatedBy, labels, note}) => {
   const now = +moment().format('X');
   try {
     await Meal.create({
@@ -13,7 +13,7 @@ const addMeal = async ({eatAt, food, userId, createdBy, updatedBy, labels, note}
       createdBy,
       eatAt,
       food,
-      userId,
+      patientId,
       labels,
       note
     })

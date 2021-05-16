@@ -9,7 +9,7 @@ import addIndex, {updateIndex} from "./addIndex";
 import updateHealth from "./updateHealth";
 import Health from "../../data/models/Health";
 import User from "../../data/models/User";
-import {relationalStatus, roles} from "../../constants";
+import {ERROR_MESSAGE_SERVER, relationalStatus, roles} from "../../constants";
 import setRelationship from "../user/setRelationship";
 import addMeal from "./addMeal";
 import Prescription from "../../data/models/Prescription";
@@ -18,6 +18,7 @@ import Meal from "../../data/models/Meal";
 const router = new Router();
 
 router.post('/get-patients', async (req, res) => {
+  // const { offset, rowsPerPage } = req.body || {};
   const data = await getPatients(req.user._id);
   res.send({
     status: true,
@@ -73,7 +74,7 @@ router.post('/add-patient', async (req, res) => {
     await patient.save();
     await Health.create({
       createdAt: +moment().format('X'),
-      userId: patient._id,
+      patientId: patient._id,
       age: moment().diff(birth, 'years'),
       diseaseType,
       fullName,
@@ -82,7 +83,7 @@ router.post('/add-patient', async (req, res) => {
   } else {
     res.send({
       status: false,
-      message: ''
+      message: 'Số điện thoại không hợp lệ!'
     });
   }
   await setRelationship({
@@ -98,8 +99,32 @@ router.post('/add-patient', async (req, res) => {
   })
   res.send({
     status: true,
-    message: ''
+    message: 'Thêm bệnh nhân thành công!'
   });
+});
+
+router.post('/unfollow-patient', async (req, res) => {
+  const { patientId } = req.body;
+  const actionUserId = req.user._id;
+  const result = {
+    status: false,
+    message: 'Không hợp lệ!'
+  };
+  try{
+    const status = await setRelationship({
+      actionUserId,
+      userTwoId: patientId,
+      status: relationalStatus.blocked
+    })
+    if (status) {
+      result.status = true;
+      result.message = 'Đã hủy theo dõi!';
+    }
+  } catch (e) {
+    result.message = ERROR_MESSAGE_SERVER;
+  };
+
+  res.send(result);
 });
 
 router.post('/set-special-patient', async (req, res) => {
@@ -111,7 +136,7 @@ router.post('/set-special-patient', async (req, res) => {
   const isMatch = await checkPermission(req.user._id, patientId);
   if (isMatch) {
     await Health.findOneAndUpdate({
-      userId: patientId
+      patientId
     }, {
       $set: {
         special: Boolean(special)
@@ -137,7 +162,7 @@ router.post('/add-index', async (req, res) => {
     await addIndex({
       measureAt,
       index,
-      userId: patientId,
+      patientId,
       createdBy,
       updatedBy: createdBy,
       labels,
@@ -145,7 +170,7 @@ router.post('/add-index', async (req, res) => {
     });
     await updateHealth(patientId);
     result.status = true;
-    result.message = 'Thêm chỉ số thành công!'
+    result.message = 'Thêm thành công!'
   }
   res.send(result);
 });
@@ -169,7 +194,7 @@ router.post('/update-index', async (req, res) => {
     });
     await updateHealth(userId);
     result.status = true;
-    result.message = 'Cập nhập thành công!'
+    result.message = 'Cập nhật thành công!'
   }
   res.send(result);
 });
@@ -186,14 +211,14 @@ router.post('/add-meal', async (req, res) => {
     await addMeal({
       eatAt,
       food,
-      userId: patientId,
+      patientId,
       createdBy,
       updatedBy: createdBy,
       note,
       labels
     });
     result.status = true;
-    result.message = 'Thêm thức ăn thành công!'
+    result.message = 'Thêm thành công!'
   }
   res.send(result);
 });
@@ -203,20 +228,21 @@ router.post('/get-health-info', async (req, res) => {
     status: false,
     message: ''
   };
-  const { userId } = req.body;
+  const { patientId } = req.body;
 
-  const user = await User.findOne({_id: userId, role: roles.patient});
+  // Kiểm tra có phải bác sĩ theo dõi không
+  const user = await User.findOne({_id: patientId, role: roles.patient});
   if (!user) {
     result.message = 'Không tồn tại!';
   } else {
     const prescription = await Prescription
-      .find({patientId: userId}, { medicines: true, note: true })
+      .find({patientId}, { medicines: true, note: true })
       .sort({createdAt: -1})
-      .limit(1);
+      .limit(1) || [];
 
     const indexData = await Index
       .find({
-        userId,
+        patientId,
         measureAt: {
           $gte: +moment().subtract(7, 'days').startOf('day').format('X'),
           $lte: +moment().endOf('day').format('X')
@@ -230,7 +256,7 @@ router.post('/get-health-info', async (req, res) => {
 
     const mealData = await Meal
       .find({
-        userId,
+        patientId,
         eatAt: {
           $gte: +moment().subtract(7, 'days').startOf('day').format('X'),
           $lte: +moment().endOf('day').format('X')
@@ -250,11 +276,59 @@ router.post('/get-health-info', async (req, res) => {
         mealData,
         indexData,
       },
-      prescription
+      prescription: prescription[0]
     }
     result.status = true;
   }
   res.send(result);
+});
+
+router.post('/update-patient-info', async (req, res) => {
+  const actionUserId = req.user._id;
+  const {
+    patientId,
+    phone,
+    note,
+    fullName,
+    diseaseType,
+    birth,
+    sex
+  } = req.body || {};
+  const user = await User.findOne({_id: patientId});
+  if (!user) {
+    res.send({
+      status: false,
+      message: 'Lỗi!'
+    });
+    return;
+  }
+  if (user && !user.inAccount) {
+    await User.findOneAndUpdate({
+      _id: patientId
+    }, {
+      ...(phone && {phone}),
+      ...(fullName && {fullName}),
+      ...(diseaseType && {diseaseType}),
+      ...(birth && {birth}),
+      ...(sex && {sex}),
+    })
+  };
+
+  await setRelationship({
+    actionUserId,
+    userTwoId: patientId,
+    status: relationalStatus.pending,
+    note,
+  });
+  await setRelationship({
+    actionUserId: patientId,
+    userTwoId: actionUserId,
+    status: relationalStatus.accepted,
+  })
+  res.send({
+    status: true,
+    message: 'Cập nhật thông tin thành công!'
+  });
 });
 
 export default router;

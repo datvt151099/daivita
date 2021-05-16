@@ -90,7 +90,7 @@ router.post("/register", async (req, res) => {
       if (role === roles.patient) {
         await Health.create({
           createdAt: +moment().format('X'),
-          userId: newUser._id,
+          patientId: newUser._id,
           age: moment().diff(birth, 'years'),
           diseaseType,
           fullName,

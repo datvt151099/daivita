@@ -5,7 +5,6 @@ import bcrypt from 'bcrypt';
 const schema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
   phone: { type: String, unique: true, required: true },
-  email: { type: String },
   birth: { type: String },
   fullName: { type: String },
   diseaseType: { type: Number},

@@ -3,29 +3,33 @@ import moment from "moment";
 import Index from "../../data/models/Index";
 import Health from "../../data/models/Health";
 
-const updateHealth = async ( userId ) => {
+const updateHealth = async ( patientId ) => {
   const indexes = await Index.find({
-    userId,
+    patientId,
     measureAt: {
       $gte: +moment().subtract(7).startOf('day').format('X'),
       $lte: +moment().endOf('day').format('X')
     }
   }).sort( { measureAt: -1 }) || [];
 
-  if (indexes.length === 0) return false;
+  // console.log(indexes);
+  // if (indexes?.length === 0) return false;
 
-  const currentIndex = indexes[0].index;
+  const itemOne = indexes[0] || {};
+  const {measureAt, index} = itemOne;
   const avgIndex = _.meanBy(indexes, 'index');
 
   await Health.findOneAndUpdate({
-    userId
+    patientId
   }, {
     $set: {
-      currentIndex,
-      avgIndex
+      currentIndex: index,
+      avgIndex,
+      measureAt
     }
   })
 
+  // 1621179321
   return true;
 }
 

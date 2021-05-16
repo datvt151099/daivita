@@ -33,9 +33,9 @@ router.post('/update-prescription', async (req, res) => {
   const {
     medicines,
     note,
-    id,
+    prescriptionId,
   } = req.body;
-  await Prescription.findOneAndUpdate({ _id: id},
+  await Prescription.findOneAndUpdate({ _id: prescriptionId},
     {
       $set: {
         ...(note && {note}),
@@ -46,11 +46,11 @@ router.post('/update-prescription', async (req, res) => {
 
   res.send({
     status: true,
-    message: 'Cập nhập đơn thuốc thành công!'
+    message: 'Cập nhật đơn thuốc thành công!'
   });
 });
 
-router.post('/get-history-prescription', async (req, res) => {
+router.post('/get-prescription-history', async (req, res) => {
   const {
     patientId
   } = req.body;

@@ -106,7 +106,7 @@ app.use(
   })),
 );
 
-app.use('/', auth);
+app.use('/auth', auth);
 app.use('/api', authenticateJWT, routesExpress);
 //
 // Error handling
