@@ -3,7 +3,8 @@ import Relationship from "../../data/models/Relationship";
 import {relationalStatus} from "../../constants";
 import Health from "../../data/models/Health";
 
-const getPatients = async (doctorId) => {
+const getPatients = async ({doctorId, page, rowsPerPage}) => {
+  const offset = (page - 1) * rowsPerPage;
   const patients = await Relationship.find({
     $or: [
       {
@@ -21,9 +22,15 @@ const getPatients = async (doctorId) => {
     return i.userTwoId;
   });
 
-  const result = await Health.find({
-    patientId: { $in: patientIds }
-  });
+  const result = await Health
+    .find({
+      patientId: { $in: patientIds }
+    })
+    .sort({
+      special: -1
+    })
+    .skip(offset)
+    .limit(rowsPerPage);
 
   return result;
 }

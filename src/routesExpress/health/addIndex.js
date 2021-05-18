@@ -3,7 +3,7 @@ import Index from "../../data/models/Index";
 
 // TODO: chua kiem tra input
 
-const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, labels, note}) => {
+const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, tags, note}) => {
   const now = +moment().format('X');
   try {
     await Index.create({
@@ -12,7 +12,7 @@ const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, labe
       measureAt,
       updatedBy,
       createdBy,
-      labels,
+      tags,
       patientId,
       index,
       note

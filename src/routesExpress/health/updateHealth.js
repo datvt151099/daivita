@@ -7,7 +7,7 @@ const updateHealth = async ( patientId ) => {
   const indexes = await Index.find({
     patientId,
     measureAt: {
-      $gte: +moment().subtract(7).startOf('day').format('X'),
+      $gte: +moment().subtract(7, 'day').startOf('day').format('X'),
       $lte: +moment().endOf('day').format('X')
     }
   }).sort( { measureAt: -1 }) || [];
@@ -17,7 +17,7 @@ const updateHealth = async ( patientId ) => {
 
   const itemOne = indexes[0] || {};
   const {measureAt, index} = itemOne;
-  const avgIndex = _.meanBy(indexes, 'index');
+  const avgIndex = _.meanBy(indexes, 'index') || null;
 
   await Health.findOneAndUpdate({
     patientId

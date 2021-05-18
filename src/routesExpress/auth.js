@@ -86,7 +86,7 @@ router.post("/register", async (req, res) => {
         workHospital,
         sex
       });
-
+      await newUser.save();
       if (role === roles.patient) {
         await Health.create({
           createdAt: +moment().format('X'),
@@ -96,7 +96,6 @@ router.post("/register", async (req, res) => {
           fullName,
         })
       }
-      await newUser.save();
       const { accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
       result.status = true;
       result.data = {
@@ -151,7 +150,7 @@ router.post("/forgot-password", async (req, res) => {
       // firebaseId
     });
     if (!user) {
-      result.message = 'Số điện thoại chưa đăng ký tài khoản';
+      result.message = 'Số điện thoại chưa đăng ký tài khoản!';
     } else {
       user.password = password;
       await user.save();

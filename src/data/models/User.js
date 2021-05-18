@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 
 const schema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
+  createdBy: { type: String },
   phone: { type: String, unique: true, required: true },
   birth: { type: String },
   fullName: { type: String },

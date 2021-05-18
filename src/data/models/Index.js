@@ -8,7 +8,7 @@ const schema = new mongoose.Schema({
   measureAt: { type: Number },
   index: { type: Number },
   patientId: { type: String },
-  labels: [ Number ],
+  tags: [ Number ],
   note: { type: String },
 }, {collection: 'index'});
 
