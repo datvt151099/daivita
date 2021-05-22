@@ -10,11 +10,12 @@ const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, tags
       updatedAt: now,
       createdAt: now,
       measureAt,
+      measureDate: moment(measureAt, 'X').format('YYYY-MM-DD'),
       updatedBy,
       createdBy,
       tags,
       patientId,
-      index,
+      index: Math.round(index * 10) / 10,
       note
     })
     return true;

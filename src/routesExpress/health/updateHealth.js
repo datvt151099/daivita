@@ -2,7 +2,17 @@ import * as _ from "lodash";
 import moment from "moment";
 import Index from "../../data/models/Index";
 import Health from "../../data/models/Health";
+import {indexThreshold} from "../../constants";
 
+const getStatus = (index) => {
+  if (!index)
+    return null
+  if (index <= indexThreshold.low)
+    return 1;
+  if (index >= indexThreshold.high)
+    return 3;
+  return 2;
+}
 const updateHealth = async ( patientId ) => {
   const indexes = await Index.find({
     patientId,
@@ -25,7 +35,8 @@ const updateHealth = async ( patientId ) => {
     $set: {
       currentIndex: index,
       avgIndex,
-      measureAt
+      measureAt,
+      status: getStatus(index)
     }
   })
 

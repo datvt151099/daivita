@@ -22,7 +22,7 @@ const getPatients = async ({doctorId, page, rowsPerPage}) => {
     return i.userTwoId;
   });
 
-  const result = await Health
+  const items = await Health
     .find({
       patientId: { $in: patientIds }
     })
@@ -32,7 +32,14 @@ const getPatients = async ({doctorId, page, rowsPerPage}) => {
     .skip(offset)
     .limit(rowsPerPage);
 
-  return result;
+  const total = await Health.count({
+      patientId: { $in: patientIds }
+    });
+
+  return {
+    total,
+    items,
+  };
 }
 
 export default getPatients;

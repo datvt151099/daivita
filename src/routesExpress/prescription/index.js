@@ -12,12 +12,14 @@ router.post('/create-prescription', async (req, res) => {
     note,
   } = req.body;
   const createdBy = req.user._id;
+  const creatorName = req.user.fullName;
 
   const now = +moment().format('X');
   await Prescription.create({
     createdAt: now,
     updatedAt: now,
     createdBy,
+    creatorName,
     patientId,
     medicines,
     note,

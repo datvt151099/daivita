@@ -4,6 +4,7 @@ const schema = new mongoose.Schema({
   createdAt: { type: Number },
   updatedAt: { type: Number },
   createdBy: { type: String },
+  creatorName: { type: String },
   patientId: { type: String },
   medicines: [{
     name: { type: String },

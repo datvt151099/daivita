@@ -12,6 +12,7 @@ const addMeal = async ({eatAt, food, patientId, createdBy, updatedBy, tags, note
       updatedBy,
       createdBy,
       eatAt,
+      eatDate: moment(eatAt, 'X').format('YYYY-MM-DD'),
       food,
       patientId,
       tags,

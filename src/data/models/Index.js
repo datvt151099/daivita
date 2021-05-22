@@ -6,6 +6,7 @@ const schema = new mongoose.Schema({
   updatedAt: { type: Number },
   updatedBy: { type: String },
   measureAt: { type: Number },
+  measureDate: { type: String },
   index: { type: Number },
   patientId: { type: String },
   tags: [ Number ],

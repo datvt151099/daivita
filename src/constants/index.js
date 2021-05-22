@@ -20,3 +20,14 @@ export const relationalStatus = {
   declined: 2,
   blocked: 3
 }
+
+export const dataTypes = {
+  all: 'ALL',
+  index: 'INDEX',
+  meal: 'MEAL'
+}
+
+export const indexThreshold = {
+  high: 181.8,
+  low: 68.4
+}

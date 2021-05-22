@@ -8,7 +8,7 @@ import Index from "../../data/models/Index";
 import addIndex, {updateIndex} from "./addIndex";
 import updateHealth from "./updateHealth";
 import User from "../../data/models/User";
-import { relationalStatus, roles} from "../../constants";
+import {dataTypes, roles} from "../../constants";
 import addMeal from "./addMeal";
 import Prescription from "../../data/models/Prescription";
 import Meal from "../../data/models/Meal";
@@ -114,7 +114,7 @@ router.post('/get-health-info', async (req, res) => {
     const note = relationship.userOneId === req.user._id ? relationship.noteUserOne : relationship.noteUserTwo;
     const [prescription = [], indexData, mealData ] = await Promise.all([
       Prescription
-        .find({patientId}, { medicines: true, note: true })
+        .find({patientId})
         .sort({createdAt: -1})
         .limit(1),
 
@@ -167,59 +167,60 @@ router.post('/get-health-info', async (req, res) => {
   res.send(result);
 });
 
-router.post('/update-patient-info', async (req, res) => {
-  const actionUserId = req.user._id;
-  const {
-    patientId,
-    phone,
-    note,
-    fullName,
-    diseaseType,
-    birth,
-    sex
-  } = req.body || {};
-  const user = await User.findOne({_id: patientId});
-  if (!user) {
-    res.send({
-      status: false,
-      message: 'Lỗi!'
-    });
-    return;
+const getPipeline = (patientId, days, type) => {
+  const dateFilter = {
+    $gte: +moment().subtract(days, 'day').startOf('day').format('X'),
+    $lte: +moment().endOf('day').format('X')
   }
-  if (user && !user.inAccount) {
-    await User.findOneAndUpdate({
-      _id: patientId
+  return [
+    {
+      $match: {
+        patientId,
+        ...(type === dataTypes.index ? {
+          measureAt: dateFilter
+        } : {
+          eatAt: dateFilter
+        })
+      }
     }, {
-      ...(phone && {phone}),
-      ...(fullName && {fullName}),
-      ...(diseaseType && {diseaseType}),
-      ...(birth && {birth}),
-      ...(sex && {sex}),
-    })
-  };
+      $project: {
+        day: type === dataTypes.index ? '$measureDate' : '$eatDate',
+        time: type === dataTypes.index ? '$measureAt' : '$eatAt',
+        value: type === dataTypes.index ? '$index' : '$food',
+        note: true,
+        tags: true,
+        type,
+      }
+    }
+  ]
+}
+router.post('/get-health-diary', async (req, res) => {
+  const { patientId, days, type = dataTypes.all } = req.body;
+  const [indexData, mealData] = await Promise.all([
+    Index.aggregate(getPipeline(patientId, days, dataTypes.index)),
+    Meal.aggregate(getPipeline(patientId, days, dataTypes.meal))
+  ]);
 
-  const relationship = await Relationship.findOne( {
-    $or: [
-      { userOneId: actionUserId, userTwoId: patientId },
-      { userOneId: patientId, userTwoId: actionUserId }
-    ]
-  }) || new Relationship({
-    userOneId: actionUserId,
-    userTwoId: patientId,
-  });
-  relationship.actionUserId = patientId;
-  relationship.status = relationalStatus.accepted;
-  relationship.actionAt = +moment().format('X');
-  if (relationship.userOneId === actionUserId) {
-    relationship.noteUserOne = note;
-  } else {
-    relationship.noteUserTwo = note;
-  }
-  await relationship.save();
+  const items = _.concat((type === dataTypes.all || type === dataTypes.index) ? indexData : [],
+    (type === dataTypes.all || type === dataTypes.meal) ? mealData : [],
+    )
+
+  const groups = _.groupBy(items, 'day');
+  const data = Object.entries(groups).map(([key, value]) => {
+    const date = moment(key);
+    const title = date.isSame(moment(), 'day') ? 'Hôm nay' : `${date.date()} th${date.month()}, ${date.year()}`;
+    return {
+      title,
+      key,
+      items: value
+    }
+  })
+
   res.send({
     status: true,
-    message: 'Cập nhật thông tin thành công!'
+    data: _.orderBy(data, ['key'], ['desc'])
   });
 });
 
 export default router;
+

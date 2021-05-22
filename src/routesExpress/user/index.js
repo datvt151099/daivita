@@ -160,6 +160,7 @@ router.post('/add-patient', async (req, res) => {
     fullName,
     diseaseType,
     birth,
+    avatar,
     sex
   } = req.body || {};
   let patientId;
@@ -174,6 +175,8 @@ router.post('/add-patient', async (req, res) => {
       inAccount: false,
       role: roles.patient,
       birth,
+      age: moment().diff(birth, 'years'),
+      avatar,
       sex,
       phone,
       password: 'test',
@@ -185,6 +188,7 @@ router.post('/add-patient', async (req, res) => {
       age: moment().diff(birth, 'years'),
       diseaseType,
       fullName,
+      avatar,
     })
     patientId = patient._id;
   } else {
@@ -214,6 +218,64 @@ router.post('/add-patient', async (req, res) => {
   res.send({
     status: true,
     message: 'Thêm bệnh nhân thành công!'
+  });
+});
+
+router.post('/update-patient-info', async (req, res) => {
+  const actionUserId = req.user._id;
+  const {
+    patientId,
+    phone,
+    note,
+    fullName,
+    diseaseType,
+    birth,
+    sex
+  } = req.body || {};
+  const user = await User.findOne({_id: patientId});
+  if (!user) {
+    res.send({
+      status: false,
+      message: 'Lỗi!'
+    });
+    return;
+  }
+  if (user && !user.inAccount) {
+    await User.findOneAndUpdate({
+      _id: patientId
+    }, {
+      ...(phone && {phone}),
+      ...(fullName && {fullName}),
+      ...(diseaseType && {diseaseType}),
+      ...(birth && {
+        birth,
+        age: moment().diff(birth, 'years'),
+      }),
+      ...(sex && {sex}),
+    })
+  };
+
+  const relationship = await Relationship.findOne( {
+    $or: [
+      { userOneId: actionUserId, userTwoId: patientId },
+      { userOneId: patientId, userTwoId: actionUserId }
+    ]
+  }) || new Relationship({
+    userOneId: actionUserId,
+    userTwoId: patientId,
+  });
+  relationship.actionUserId = patientId;
+  relationship.status = relationalStatus.accepted;
+  relationship.actionAt = +moment().format('X');
+  if (relationship.userOneId === actionUserId) {
+    relationship.noteUserOne = note;
+  } else {
+    relationship.noteUserTwo = note;
+  }
+  await relationship.save();
+  res.send({
+    status: true,
+    message: 'Cập nhật thông tin thành công!'
   });
 });
 

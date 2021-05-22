@@ -33,10 +33,12 @@ router.post('/login', async (req, res) => {
     if (user) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
-        const {accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(user)));
+        const userInfo = _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']);
+        const {accessToken, expiresIn } = generateToken(userInfo);
         result.status = true;
         result.data = {
           accessToken,
+          userInfo,
           expiresIn
         };
         result.message = "Đăng nhập thành công!"
@@ -80,6 +82,7 @@ router.post("/register", async (req, res) => {
         fullName,
         password,
         diseaseType,
+        age: moment().diff(birth, 'years'),
         role,
         inAccount: true,
         birth,
@@ -95,11 +98,13 @@ router.post("/register", async (req, res) => {
           diseaseType,
           fullName,
         })
-      }
-      const { accessToken, expiresIn } = generateToken(JSON.parse(JSON.stringify(newUser)));
+      };
+      const userInfo = _.omit(JSON.parse(JSON.stringify(newUser)), ['password', 'firebaseId']);
+      const { accessToken, expiresIn } = generateToken(userInfo);
       result.status = true;
       result.data = {
         accessToken,
+        userInfo,
         expiresIn
       };
       result.message = "Đăng ký thành công!";
