@@ -3,89 +3,82 @@ import { Router } from 'express';
 import * as _ from "lodash";
 import moment from "moment";
 import Promise from 'bluebird';
-import checkPermission from "../user/checkPermission";
 import Index from "../../data/models/Index";
-import addIndex, {updateIndex} from "./addIndex";
+import addIndex, {editIndex} from "./addIndex";
 import updateHealth from "./updateHealth";
 import User from "../../data/models/User";
-import {dataTypes, roles} from "../../constants";
-import addMeal from "./addMeal";
+import {dataTypes, indexThreshold, roles} from "../../constants";
+import addMeal, {editMeal} from "./addMeal";
 import Prescription from "../../data/models/Prescription";
 import Meal from "../../data/models/Meal";
 import Relationship from "../../data/models/Relationship";
 
 const router = new Router();
 
-router.post('/add-index', async (req, res) => {
+router.post('/add-log', async (req, res) => {
   const result = {
     status: false,
     message: ''
   };
   const createdBy = req.user._id;
-  const { measureAt, index, patientId = createdBy, note, tags } = req.body;
-  const isMatch = await checkPermission(createdBy, patientId);
-  if (isMatch) {
+  const { time = +moment().format('X'), value, patientId = createdBy, note, tag, type } = req.body;
+  if ( type === dataTypes.index ) {
     await addIndex({
-      measureAt,
-      index,
+      time,
+      value,
       patientId,
       createdBy,
       updatedBy: createdBy,
-      tags,
+      tag,
       note
     });
     await updateHealth(patientId);
-    result.status = true;
-    result.message = 'Thêm thành công!'
+  } else {
+    await addMeal({
+      time,
+      value,
+      patientId,
+      createdBy,
+      updatedBy: createdBy,
+      tag,
+      note
+    })
   }
+  result.status = true;
+  result.message = 'Thêm thành công!'
   res.send(result);
 });
 
-router.post('/update-index', async (req, res) => {
+router.post('/edit-log', async (req, res) => {
   const result = {
     status: false,
     message: ''
   };
   const updatedBy = req.user._id;
-  const { measureAt, indexId, note, index } = req.body;
-  const { userId } = await Index.findOne({ _id: indexId }) || {};
-  const isMatch = await checkPermission(updatedBy, userId);
-  if (isMatch) {
-    await updateIndex({
-      updatedBy,
-      indexId,
-      measureAt,
-      index,
-      note
-    });
-    await updateHealth(userId);
-    result.status = true;
-    result.message = 'Cập nhật thành công!'
-  }
-  res.send(result);
-});
-
-router.post('/add-meal', async (req, res) => {
-  const result = {
-    status: false,
-    message: ''
-  };
-  const createdBy = req.user._id;
-  const { eatAt, food, patientId = createdBy, note, tags } = req.body;
-  const isMatch = await checkPermission(createdBy, patientId);
-  if (isMatch) {
-    await addMeal({
-      eatAt,
-      food,
-      patientId,
-      createdBy,
-      updatedBy: createdBy,
+  const { logId, tag, type, note, value, time } = req.body;
+  if ( type === dataTypes.index ) {
+    await editIndex({
+      time,
+      value,
+      tag,
       note,
-      tags
+      updatedBy,
+      id: logId,
     });
-    result.status = true;
-    result.message = 'Thêm thành công!'
+    const { patientId } = await Index.findOne({_id: logId}) || {};
+    if (patientId) await updateHealth(patientId);
+  } else {
+    await editMeal({
+      time,
+      value,
+      updatedBy,
+      id: logId,
+      tag,
+      note
+    })
   }
+  result.status = true;
+  result.message = 'Cập nhập thành công!'
   res.send(result);
 });
 
@@ -129,6 +122,7 @@ router.post('/get-health-info', async (req, res) => {
           measureAt: true,
           index: true,
           note: true,
+          tag: true
         })
         .sort({measureAt: -1}),
 
@@ -143,6 +137,7 @@ router.post('/get-health-info', async (req, res) => {
           eatAt: true,
           food: true,
           note: true,
+          tag: true
         })
         .sort({eatAt: -1})
 
@@ -157,6 +152,8 @@ router.post('/get-health-info', async (req, res) => {
       health: {
         currentIndex: currentIndex ? currentIndex.index : null,
         avgIndex,
+        lowIndex: indexThreshold.low,
+        highIndex: indexThreshold.high,
         mealData,
         indexData,
       },
@@ -188,13 +185,13 @@ const getPipeline = (patientId, days, type) => {
         time: type === dataTypes.index ? '$measureAt' : '$eatAt',
         value: type === dataTypes.index ? '$index' : '$food',
         note: true,
-        tags: true,
+        tag: true,
         type,
       }
     }
   ]
 }
-router.post('/get-health-diary', async (req, res) => {
+router.post('/get-health-logs', async (req, res) => {
   const { patientId, days, type = dataTypes.all } = req.body;
   const [indexData, mealData] = await Promise.all([
     Index.aggregate(getPipeline(patientId, days, dataTypes.index)),

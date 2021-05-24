@@ -12,7 +12,12 @@ const getStatus = (index) => {
   if (index >= indexThreshold.high)
     return 3;
   return 2;
-}
+};
+
+const getPriority = (index) => {
+  return Math.abs(index - (indexThreshold.high + indexThreshold.low) / 2);
+};
+
 const updateHealth = async ( patientId ) => {
   const indexes = await Index.find({
     patientId,
@@ -36,7 +41,8 @@ const updateHealth = async ( patientId ) => {
       currentIndex: index,
       avgIndex,
       measureAt,
-      status: getStatus(index)
+      status: getStatus(index),
+      priority: getPriority(index),
     }
   })
 

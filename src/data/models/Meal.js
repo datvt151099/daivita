@@ -7,7 +7,7 @@ const schema = new mongoose.Schema({
   updatedBy: { type: String },
   eatAt: { type: Number },
   eatDate: {type: String},
-  tags: [ Number ],
+  tag: {type: Number },
   food: { type: String },
   patientId: { type: String },
   note: { type: String },

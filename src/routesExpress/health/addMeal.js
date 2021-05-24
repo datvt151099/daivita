@@ -3,7 +3,7 @@ import Meal from "../../data/models/Meal";
 
 // TODO: chua kiem tra input
 
-const addMeal = async ({eatAt, food, patientId, createdBy, updatedBy, tags, note}) => {
+const addMeal = async ({patientId, createdBy, updatedBy, tag, time, value, note}) => {
   const now = +moment().format('X');
   try {
     await Meal.create({
@@ -11,11 +11,11 @@ const addMeal = async ({eatAt, food, patientId, createdBy, updatedBy, tags, note
       createdAt: now,
       updatedBy,
       createdBy,
-      eatAt,
-      eatDate: moment(eatAt, 'X').format('YYYY-MM-DD'),
-      food,
+      eatAt: time,
+      eatDate: moment(time, 'X').format('YYYY-MM-DD'),
+      food: value,
       patientId,
-      tags,
+      tag,
       note
     })
     return true;
@@ -24,16 +24,20 @@ const addMeal = async ({eatAt, food, patientId, createdBy, updatedBy, tags, note
   }
 };
 
-export const updateIndex = async ({updatedBy, mealId, eatAt, food, note}) => {
+export const editMeal = async ({updatedBy, id, tag, time, value, note}) => {
   const now = +moment().format('X');
   try {
     await Meal.findOneAndUpdate({
-      _id: mealId
+      _id: id
     }, {
       $set: {
-        ...(eatAt && { eatAt }),
-        ...(food && { food }),
+        ...(time && {
+          eatAt: time,
+          eatDate: moment(time, 'X').format('YYYY-MM-DD'),
+        }),
+        ...(value && { food: value }),
         ...(note && { note }),
+        ...(tag && { tag }),
         updatedAt: now,
         updatedBy
       }

@@ -31,7 +31,7 @@ router.post('/create-prescription', async (req, res) => {
   });
 });
 
-router.post('/update-prescription', async (req, res) => {
+router.post('/edit-prescription', async (req, res) => {
   const {
     medicines,
     note,
@@ -41,7 +41,7 @@ router.post('/update-prescription', async (req, res) => {
     {
       $set: {
         ...(note && {note}),
-        ...(medicines && medicines),
+        ...(medicines && { medicines }),
         updatedAt: +moment().format('X')
       }
     })

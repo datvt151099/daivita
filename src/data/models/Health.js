@@ -6,6 +6,7 @@ const schema = new mongoose.Schema({
   status: { type: Number },
   measureAt: { type: Number },
   patientId: { type: String },
+  priority: { type: Number },
   fullName: { type: String },
   avatar: { type: String },
   age: { type: Number },
@@ -15,5 +16,6 @@ const schema = new mongoose.Schema({
 }, { collection: 'health' });
 
 schema.index({ patientId: 1 }, { background: true });
+schema.index({ priority: -1 }, { background: true });
 
 export default mongoose.model('Health', schema);

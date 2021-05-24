@@ -1,21 +1,20 @@
 import moment from "moment";
+import * as _ from "lodash";
 import Index from "../../data/models/Index";
 
-// TODO: chua kiem tra input
-
-const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, tags, note}) => {
+const addIndex = async ({patientId, createdBy, updatedBy, tag, time, value, note}) => {
   const now = +moment().format('X');
   try {
     await Index.create({
       updatedAt: now,
       createdAt: now,
-      measureAt,
-      measureDate: moment(measureAt, 'X').format('YYYY-MM-DD'),
+      measureAt: time,
+      measureDate: moment(time, 'X').format('YYYY-MM-DD'),
       updatedBy,
       createdBy,
-      tags,
+      tag,
       patientId,
-      index: Math.round(index * 10) / 10,
+      index: Math.round(_.toNumber(value) * 10) / 10,
       note
     })
     return true;
@@ -24,16 +23,20 @@ const addIndex = async ({measureAt, index, patientId, createdBy, updatedBy, tags
   }
 };
 
-export const updateIndex = async ({updatedBy, indexId ,measureAt, index, note}) => {
+export const editIndex = async ({updatedBy, id , time, value, note, tag}) => {
   const now = +moment().format('X');
   try {
     await Index.findOneAndUpdate({
-      _id: indexId
+      _id: id
     }, {
       $set: {
-        ...(measureAt && { measureAt }),
-        ...(index && { index }),
+        ...(time && {
+          measureAt: time,
+          measureDate: moment(time, 'X').format('YYYY-MM-DD'),
+        }),
+        ...(value && { index: _.toNumber(value) }),
         ...(note && { note }),
+        ...(tag && { tag }),
         updatedAt: now,
         updatedBy
       }

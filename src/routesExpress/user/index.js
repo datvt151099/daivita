@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import * as _ from "lodash";
 import moment from "moment";
+import Promise from 'bluebird';
 import setRelationship from "./setRelationship";
 import {ERROR_MESSAGE_SERVER, relationalStatus, roles} from "../../constants";
 import getPatients from "./getPatients";
@@ -221,16 +222,16 @@ router.post('/add-patient', async (req, res) => {
   });
 });
 
-router.post('/update-patient-info', async (req, res) => {
+router.post('/edit-patient-info', async (req, res) => {
   const actionUserId = req.user._id;
   const {
     patientId,
-    phone,
     note,
     fullName,
     diseaseType,
     birth,
-    sex
+    sex,
+    avatar,
   } = req.body || {};
   const user = await User.findOne({_id: patientId});
   if (!user) {
@@ -241,18 +242,31 @@ router.post('/update-patient-info', async (req, res) => {
     return;
   }
   if (user && !user.inAccount) {
-    await User.findOneAndUpdate({
-      _id: patientId
-    }, {
-      ...(phone && {phone}),
-      ...(fullName && {fullName}),
-      ...(diseaseType && {diseaseType}),
-      ...(birth && {
-        birth,
-        age: moment().diff(birth, 'years'),
+    await Promise.all([
+      User.findOneAndUpdate({
+        _id: patientId
+      }, {
+        ...(fullName && {fullName}),
+        ...(diseaseType && {diseaseType}),
+        ...(birth && {
+          birth,
+          age: moment().diff(birth, 'years'),
+        }),
+        ...(sex && {sex}),
       }),
-      ...(sex && {sex}),
-    })
+      Health.findOneAndUpdate({
+        patientId
+      }, {
+        $set: {
+          ...(fullName && {fullName}),
+          ...(avatar && {avatar }),
+          ...(diseaseType && {diseaseType}),
+          ...(birth && {
+            age: moment().diff(birth, 'years'),
+          }),
+        }
+      })
+    ])
   };
 
   const relationship = await Relationship.findOne( {

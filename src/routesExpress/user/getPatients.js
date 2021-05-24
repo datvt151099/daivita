@@ -27,7 +27,7 @@ const getPatients = async ({doctorId, page, rowsPerPage}) => {
       patientId: { $in: patientIds }
     })
     .sort({
-      special: -1
+      priority: -1
     })
     .skip(offset)
     .limit(rowsPerPage);

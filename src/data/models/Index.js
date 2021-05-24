@@ -9,7 +9,7 @@ const schema = new mongoose.Schema({
   measureDate: { type: String },
   index: { type: Number },
   patientId: { type: String },
-  tags: [ Number ],
+  tag: {type: Number},
   note: { type: String },
 }, {collection: 'index'});
 
