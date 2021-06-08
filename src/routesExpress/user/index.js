@@ -10,6 +10,7 @@ import User from "../../data/models/User";
 import Relationship from "../../data/models/Relationship";
 import Health from "../../data/models/Health";
 import checkPermission from "./checkPermission";
+import {rounding} from "../helpers";
 
 const router = new Router();
 
@@ -121,6 +122,16 @@ router.post('/get-patients', async (req, res) => {
   });
 });
 
+router.post('/get-patient', async (req, res) => {
+  const { patientId } = req.body || {};
+  const data = await Health.findOne({patientId})
+  res.send({
+    status: true,
+    data,
+  });
+});
+
+
 router.post('/validate-add-patient', async (req, res) => {
   const result = {
     status: false,
@@ -153,6 +164,48 @@ router.post('/validate-add-patient', async (req, res) => {
   res.send(result);
 });
 
+const editUserInfo = async ({
+                                 userId,
+                                 fullName,
+                                 diseaseType,
+                                 birth,
+                                 sex,
+                                 avatar,
+                              workHospital,
+                              role = roles.patient
+}) => {
+  await Promise.all([
+    User.findOneAndUpdate({
+      _id: userId
+    }, {
+      ...(fullName && {fullName}),
+      ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
+      ...(birth && {
+        birth,
+        age: moment().diff(birth, 'years'),
+      }),
+      ...(Boolean(sex === 0 || sex) && {sex}),
+      ...(workHospital && {workHospital}),
+      ...(avatar && {avatar }),
+    }), () => {
+      if (role === roles.patient) {
+        return Health.findOneAndUpdate({
+          patientId: userId
+        }, {
+          $set: {
+            ...(fullName && {fullName}),
+            ...(avatar && {avatar }),
+            ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
+            ...(birth && {
+              age: moment().diff(birth, 'years'),
+            }),
+          }
+        })
+      }
+    }
+  ]);
+  return User.findOne({_id: userId});
+}
 router.post('/add-patient', async (req, res) => {
   const actionUserId = req.user._id;
   const {
@@ -168,6 +221,17 @@ router.post('/add-patient', async (req, res) => {
   const user = await User.findOne({phone});
   if (user && user.role === roles.patient) {
     patientId = user._id;
+    if (!user.inAccount) {
+      await editUserInfo({
+        userId: patientId,
+        fullName,
+        diseaseType,
+        birth,
+        sex,
+        role: roles.patient,
+        avatar
+      })
+    }
   } else if (!user) {
     const patient = new User({
       fullName,
@@ -180,7 +244,7 @@ router.post('/add-patient', async (req, res) => {
       avatar,
       sex,
       phone,
-      password: 'test',
+      password: 'password',
     });
     await patient.save();
     await Health.create({
@@ -233,6 +297,7 @@ router.post('/edit-patient-info', async (req, res) => {
     sex,
     avatar,
   } = req.body || {};
+  let data = {};
   const user = await User.findOne({_id: patientId});
   if (!user) {
     res.send({
@@ -242,31 +307,15 @@ router.post('/edit-patient-info', async (req, res) => {
     return;
   }
   if (user && !user.inAccount) {
-    await Promise.all([
-      User.findOneAndUpdate({
-        _id: patientId
-      }, {
-        ...(fullName && {fullName}),
-        ...(diseaseType && {diseaseType}),
-        ...(birth && {
-          birth,
-          age: moment().diff(birth, 'years'),
-        }),
-        ...(sex && {sex}),
-      }),
-      Health.findOneAndUpdate({
-        patientId
-      }, {
-        $set: {
-          ...(fullName && {fullName}),
-          ...(avatar && {avatar }),
-          ...(diseaseType && {diseaseType}),
-          ...(birth && {
-            age: moment().diff(birth, 'years'),
-          }),
-        }
-      })
-    ])
+    data = await editUserInfo({
+      userId: patientId,
+      fullName,
+      diseaseType,
+      birth,
+      sex,
+      role: roles.patient,
+      avatar
+    })
   };
 
   const relationship = await Relationship.findOne( {
@@ -287,9 +336,69 @@ router.post('/edit-patient-info', async (req, res) => {
     relationship.noteUserTwo = note;
   }
   await relationship.save();
+  data.note = note;
   res.send({
     status: true,
-    message: 'Cập nhật thông tin thành công!'
+    message: 'Cập nhật thông tin thành công!',
+    data: _.omit({
+      ...JSON.parse(JSON.stringify(data)),
+      note,
+    }, ['password', 'firebaseId']),
+  });
+});
+
+router.post('/edit-user-info', async (req, res) => {
+  const {
+    fullName,
+    diseaseType,
+    birth,
+    sex,
+    avatar,
+    workHospital
+  } = req.body || {};
+  const {
+    _id,
+    role,
+  } = req.user;
+  const data = await editUserInfo({
+    userId: _id,
+    fullName,
+    diseaseType,
+    workHospital,
+    birth,
+    sex,
+    role,
+    avatar
+  })
+
+  res.send({
+    status: true,
+    message: 'Cập nhật thông tin thành công!',
+    data: _.omit(JSON.parse(JSON.stringify(data)), ['password', 'firebaseId'])
+  });
+});
+
+router.post('/edit-index-threshold', async (req, res) => {
+  const {
+    lowIndex,
+    highIndex,
+  } = req.body || {};
+  const {
+    _id,
+  } = req.user;
+
+  await User.findOneAndUpdate({
+    _id
+  }, {
+    $set: {
+      lowIndex: rounding(lowIndex),
+      highIndex: rounding(highIndex)
+    }
+  })
+
+  res.send({
+    status: true,
+    message: 'Thành công!'
   });
 });
 

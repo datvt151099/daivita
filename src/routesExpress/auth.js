@@ -11,7 +11,7 @@ import Health from "../data/models/Health";
 
 const router = new Router();
 
-const generateToken = (user) => {
+export const generateToken = (user) => {
   const { expiresIn } = config.auth.jwt;
   const accessToken = jwt.sign(JSON.parse(JSON.stringify(user)), config.auth.jwt.secret, {expiresIn});
   return {
@@ -34,7 +34,7 @@ router.post('/login', async (req, res) => {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
         const userInfo = _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']);
-        const {accessToken, expiresIn } = generateToken(userInfo);
+        const {accessToken, expiresIn } = generateToken({_id: userInfo._id});
         result.status = true;
         result.data = {
           accessToken,
@@ -64,7 +64,8 @@ router.post("/register", async (req, res) => {
     role = roles.doctor,
     birth,
     workHospital,
-    sex
+    sex,
+    firebaseId,
   } = req.body;
 
   const result = {
@@ -87,7 +88,8 @@ router.post("/register", async (req, res) => {
         inAccount: true,
         birth,
         workHospital,
-        sex
+        sex,
+        firebaseId
       });
       await newUser.save();
       if (role === roles.patient) {
@@ -100,7 +102,7 @@ router.post("/register", async (req, res) => {
         })
       };
       const userInfo = _.omit(JSON.parse(JSON.stringify(newUser)), ['password', 'firebaseId']);
-      const { accessToken, expiresIn } = generateToken(userInfo);
+      const { accessToken, expiresIn } = generateToken({_id: userInfo._id});
       result.status = true;
       result.data = {
         accessToken,
@@ -141,7 +143,7 @@ router.post("/forgot-password", async (req, res) => {
   const {
     phone,
     password,
-    // firebaseId,
+    firebaseId,
   } = req.body;
 
   const result = {
@@ -152,7 +154,7 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const user = await User.findOne({
       phone,
-      // firebaseId
+      firebaseId
     });
     if (!user) {
       result.message = 'Số điện thoại chưa đăng ký tài khoản!';
@@ -168,38 +170,5 @@ router.post("/forgot-password", async (req, res) => {
   }
   res.status(200).send(result);
 })
-
-router.post("/import", async (req, res) => {
-  // await Relationship.insertMany([{
-  //   userOneId: "608d2422970db60b4d000d1e",
-  //   userTwoId: "608d2422970db60b4d000d1d",
-  //   actionUserId: "608d2422970db60b4d000d1d",
-  //   status: 1,
-  // }, {
-  //   userOneId: "608d2422970db60b4d000d1e",
-  //   userTwoId: "608d2422970db60b4d000d1c",
-  //   actionUserId: "608d2422970db60b4d000d1c",
-  //   status: 1,
-  // }])
-  await Health.insertMany([
-    {
-      currentIndex: 102.4,
-      userId: '608d2422970db60b4d000d1d',
-      fullName: "Nguyễn Hà Quang",
-      age: 21,
-      diseaseType: 2,
-      avgIndex: 102.4
-    },
-    {
-      currentIndex: 102.4,
-      userId: '608d2422970db60b4d000d1c',
-      fullName: "Võ Tấn Đạt",
-      age: 21,
-      diseaseType: 2,
-      avgIndex: 102.4
-    }
-  ])
-  res.send(true);
-});
 
 export default router;

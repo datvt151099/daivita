@@ -31,3 +31,13 @@ export const indexThreshold = {
   high: 181.8,
   low: 68.4
 }
+
+export const reportTypes = {
+  lineChart: 'LINE_CHART',
+  pieChart: 'PIE_CHART',
+  comparisonChart: 'COMPARISON_CHART'
+}
+
+export const notifyTypes = {
+  index: 'INDEX',
+}

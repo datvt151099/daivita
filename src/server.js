@@ -14,6 +14,7 @@ import config from './config';
 import './data/mongoose';
 import schema from './data/schema';
 import { formatError } from './data/graphql/baseResolver';
+import User from "./data/models/User";
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -39,21 +40,27 @@ app.use(bodyParser.json());
 //
 // Authentication
 // -----------------------------------------------------------------------------
-const authenticateJWT = (req, res, next) => {
+// eslint-disable-next-line consistent-return
+const authenticateJWT = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
     const token = authHeader.split(' ')[1];
 
     // eslint-disable-next-line consistent-return
-    jwt.verify(token, config.auth.jwt.secret, (err, user) => {
-      if (err) {
-        return res.status(403).send('Forbidden');
+    try {
+      const decoded = jwt.verify(token, config.auth.jwt.secret);
+      const user = await User.findOne({_id: decoded._id});
+      if (user) {
+        req.user = JSON.parse(JSON.stringify(user));
+        next();
+      } else {
+        res.status(401).send('Unauthorized');
       }
+    } catch (e) {
+      return res.status(403).send('Forbidden');
+    }
 
-      req.user = user;
-      next();
-    });
   } else {
     res.status(401).send('Unauthorized');
   }

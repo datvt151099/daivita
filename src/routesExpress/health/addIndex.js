@@ -34,7 +34,7 @@ export const editIndex = async ({updatedBy, id , time, value, note, tag}) => {
           measureAt: time,
           measureDate: moment(time, 'X').format('YYYY-MM-DD'),
         }),
-        ...(value && { index: _.toNumber(value) }),
+        ...(value && { index: Math.round(_.toNumber(value) * 10) / 10 }),
         ...(note && { note }),
         ...(tag && { tag }),
         updatedAt: now,

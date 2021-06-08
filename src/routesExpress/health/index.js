@@ -7,11 +7,12 @@ import Index from "../../data/models/Index";
 import addIndex, {editIndex} from "./addIndex";
 import updateHealth from "./updateHealth";
 import User from "../../data/models/User";
-import {dataTypes, indexThreshold, roles} from "../../constants";
+import {dataTypes, indexThreshold, reportTypes, roles} from "../../constants";
 import addMeal, {editMeal} from "./addMeal";
 import Prescription from "../../data/models/Prescription";
 import Meal from "../../data/models/Meal";
 import Relationship from "../../data/models/Relationship";
+import {genNotification} from "../notification";
 
 const router = new Router();
 
@@ -32,7 +33,9 @@ router.post('/add-log', async (req, res) => {
       tag,
       note
     });
+
     await updateHealth(patientId);
+    await genNotification({userId: patientId, measureAt: time, index: _.toNumber(value)});
   } else {
     await addMeal({
       time,
@@ -88,6 +91,7 @@ router.post('/get-health-info', async (req, res) => {
     message: ''
   };
   const { patientId } = req.body;
+  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high } = req.user;
 
   const [
     relationship,
@@ -120,6 +124,7 @@ router.post('/get-health-info', async (req, res) => {
           }
         }, {
           measureAt: true,
+          measureDate: true,
           index: true,
           note: true,
           tag: true
@@ -135,6 +140,7 @@ router.post('/get-health-info', async (req, res) => {
           }
         }, {
           eatAt: true,
+          eatDate: true,
           food: true,
           note: true,
           tag: true
@@ -151,11 +157,17 @@ router.post('/get-health-info', async (req, res) => {
       }, ['password', 'firebaseId']),
       health: {
         currentIndex: currentIndex ? currentIndex.index : null,
-        avgIndex,
-        lowIndex: indexThreshold.low,
-        highIndex: indexThreshold.high,
-        mealData,
-        indexData,
+        avgIndex: Math.round(avgIndex * 10) / 10,
+        lowIndex,
+        highIndex,
+        mealData: {
+          total: _.uniqBy(mealData, 'eatDate').length,
+          items: mealData
+        },
+        indexData: {
+          total: _.uniqBy(indexData, 'measureDate').length,
+          items: indexData
+        },
       },
       prescription: prescription[0]
     }
@@ -216,6 +228,93 @@ router.post('/get-health-logs', async (req, res) => {
   res.send({
     status: true,
     data: _.orderBy(data, ['key'], ['desc'])
+  });
+});
+
+const getPiaChartData = async (patientId, startDate, endDate, lowIndex, highIndex) => {
+  const data = await Index.aggregate([{
+    $match: {
+      patientId,
+      measureAt: {
+        $gte: +moment(startDate).startOf('day').format('X'),
+        $lte: +moment(endDate).endOf('day').format('X')
+      }
+    },
+  }, {
+    $group: {
+      _id: null,
+      totalHigh: {
+        $sum: {
+          $cond: [
+            {
+              $gte: ['$index', highIndex]
+            }, 1, 0],
+        },
+      },
+      totalLow: {
+        $sum: {
+          $cond: [
+            {
+              $lte: ['$index', lowIndex]
+            }, 1, 0],
+        },
+      },
+      totalNormal: {
+        $sum: {
+          $cond: [
+            {
+              $and: [{
+                $lt: ['$index', highIndex]
+              }, {
+                $gt: ['$index', lowIndex]
+              }],
+            }, 1, 0],
+        },
+      },
+    }
+  }, {
+    $project: {
+      _id: false,
+      totalNormal: true,
+      totalHigh: true,
+      totalLow: true,
+      highIndex,
+      lowIndex
+    }
+  }]).allowDiskUse(true);
+  const result = data[0];
+  if (result) {
+    result.lowIndex = lowIndex;
+    result.highIndex = highIndex;
+  }
+  console.log(data, result);
+  return result;
+}
+
+router.post('/get-health-report', async (req, res) => {
+  const { patientId, startDate, endDate, reportType = reportTypes.lineChart } = req.body;
+
+  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high } = req.user;
+
+  let data;
+  switch (reportType) {
+    case reportTypes.lineChart:
+      data = {};
+      break;
+    case reportTypes.pieChart:
+      data = await getPiaChartData(patientId, startDate, endDate, lowIndex, highIndex);
+      break;
+    case reportTypes.comparisonChart:
+      data = {}
+      break;
+    default:
+      data = {}
+      break;
+  }
+
+  res.send({
+    status: true,
+    data
   });
 });
 

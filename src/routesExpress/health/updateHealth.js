@@ -39,14 +39,13 @@ const updateHealth = async ( patientId ) => {
   }, {
     $set: {
       currentIndex: index,
-      avgIndex,
+      avgIndex: Math.round(avgIndex * 10) / 10,
       measureAt,
       status: getStatus(index),
       priority: getPriority(index),
     }
   })
 
-  // 1621179321
   return true;
 }
 

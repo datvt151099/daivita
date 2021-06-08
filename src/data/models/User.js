@@ -1,6 +1,7 @@
 /* eslint-disable consistent-return */
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+import {indexThreshold} from "../../constants";
 
 const schema = new mongoose.Schema({
   created: { type: Date, default: Date.now },
@@ -15,8 +16,11 @@ const schema = new mongoose.Schema({
   inAccount: { type: Boolean },
   password: { type: String, required: true },
   sex: {type: Number },
+  highIndex: { type: Number, default: indexThreshold.high},
+  lowIndex: { type: Number, default: indexThreshold.low},
   workHospital: { type: String },
   firebaseId: { type: String },
+  registrationToken: { type: String },
 }, {collection: 'user'});
 
 
