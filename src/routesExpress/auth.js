@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
     status: false,
     message: ''
   };
-  const { phone, password } = req.body;
+  const { phone, password, token } = req.body;
 
   try {
     const user = await User.findOne({ phone });
@@ -33,6 +33,8 @@ router.post('/login', async (req, res) => {
     if (user) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
+        user.registrationToken = token;
+        await user.save();
         const userInfo = _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']);
         const {accessToken, expiresIn } = generateToken({_id: userInfo._id});
         result.status = true;
@@ -66,6 +68,7 @@ router.post("/register", async (req, res) => {
     workHospital,
     sex,
     firebaseId,
+    token
   } = req.body;
 
   const result = {
@@ -89,7 +92,8 @@ router.post("/register", async (req, res) => {
         birth,
         workHospital,
         sex,
-        firebaseId
+        firebaseId,
+        registrationToken: token,
       });
       await newUser.save();
       if (role === roles.patient) {

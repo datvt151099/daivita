@@ -1,8 +1,5 @@
 /* eslint-disable no-console, consistent-return */
 import { Router } from 'express';
-import * as _ from "lodash";
-import moment from "moment";
-import Promise from 'bluebird';
 import setRelationship from "./setRelationship";
 import {ERROR_MESSAGE_SERVER, relationalStatus, roles} from "../../constants";
 import getPatients from "./getPatients";
@@ -10,11 +7,25 @@ import User from "../../data/models/User";
 import Relationship from "../../data/models/Relationship";
 import Health from "../../data/models/Health";
 import checkPermission from "./checkPermission";
-import {rounding} from "../helpers";
+import {formatUserData, rounding} from "../helpers";
+import addPatient from "./addPatient";
+import editUserInfo, {editPatientInfo} from "./editUser";
 
 const router = new Router();
 
 const ROWS_PER_PAGE = 10;
+
+router.post("/logout", async (req, res) => {
+  await User.findOneAndUpdate({_id: req.user._id}, {
+    $set: {
+      registrationToken: null,
+    }
+  })
+  res.send({
+    status: true,
+  });
+})
+
 
 router.post('/follow', async (req, res) => {
   const { userId } = req.body;
@@ -114,21 +125,34 @@ router.post('/unfollow', async (req, res) => {
 
 router.post('/get-patients', async (req, res) => {
   const { page = 1,  rowsPerPage = ROWS_PER_PAGE } = req.body || {};
-  const data = await getPatients({doctorId: req.user._id, page, rowsPerPage});
-  res.send({
-    status: true,
-    data,
-    message: '',
-  });
+  try {
+    const data = await getPatients({doctorId: req.user._id, page, rowsPerPage});
+    res.send({
+      status: true,
+      data
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
 });
 
 router.post('/get-patient', async (req, res) => {
   const { patientId } = req.body || {};
-  const data = await Health.findOne({patientId})
-  res.send({
-    status: true,
-    data,
-  });
+  try {
+    const data = await Health.findOne({patientId})
+    res.send({
+      status: true,
+      data
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
 });
 
 
@@ -138,74 +162,37 @@ router.post('/validate-add-patient', async (req, res) => {
     message: ''
   };
   const { phone } = req.body || {};
-  const user = await User.findOne({phone});
+  try {
+    const user = await User.findOne({phone});
 
-  if (!user) {
-    result.status = true;
-  } else if (user.role === roles.doctor) {
-    result.message = 'Số điện thoại đã đăng ký tài khoản bác sĩ!';
-  } else {
-    const relationship = await Relationship.findOne({
-      $or: [
-        { userOneId: req.user._id, userTwoId: user._id},
-        { userTwoId: user._id, userOneId: req.user._id},
-      ],
-      status: relationalStatus.accepted,
-    })
-
-    if (relationship) {
-      result.status = false;
-      result.message = 'Bệnh nhân đã theo dõi!';
-    } else {
+    if (!user) {
       result.status = true;
-      result.data = _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']);
+    } else if (user.role === roles.doctor) {
+      result.message = 'Số điện thoại đã đăng ký tài khoản bác sĩ!';
+    } else {
+      const relationship = await Relationship.findOne({
+        $or: [
+          { userOneId: req.user._id, userTwoId: user._id},
+          { userTwoId: user._id, userOneId: req.user._id},
+        ],
+        status: relationalStatus.accepted,
+      })
+
+      if (relationship) {
+        result.status = false;
+        result.message = 'Bệnh nhân đã theo dõi!';
+      } else {
+        result.status = true;
+        result.data = formatUserData(JSON.parse(JSON.stringify(user)));
+      }
     }
+  } catch (e) {
+    result.message = JSON.stringify(e.message);
   }
   res.send(result);
 });
 
-const editUserInfo = async ({
-                                 userId,
-                                 fullName,
-                                 diseaseType,
-                                 birth,
-                                 sex,
-                                 avatar,
-                              workHospital,
-                              role = roles.patient
-}) => {
-  await Promise.all([
-    User.findOneAndUpdate({
-      _id: userId
-    }, {
-      ...(fullName && {fullName}),
-      ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
-      ...(birth && {
-        birth,
-        age: moment().diff(birth, 'years'),
-      }),
-      ...(Boolean(sex === 0 || sex) && {sex}),
-      ...(workHospital && {workHospital}),
-      ...(avatar && {avatar }),
-    }), () => {
-      if (role === roles.patient) {
-        return Health.findOneAndUpdate({
-          patientId: userId
-        }, {
-          $set: {
-            ...(fullName && {fullName}),
-            ...(avatar && {avatar }),
-            ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
-            ...(birth && {
-              age: moment().diff(birth, 'years'),
-            }),
-          }
-        })
-      }
-    }
-  ]);
-  return User.findOne({_id: userId});
-}
+
 router.post('/add-patient', async (req, res) => {
   const actionUserId = req.user._id;
   const {
@@ -217,73 +204,35 @@ router.post('/add-patient', async (req, res) => {
     avatar,
     sex
   } = req.body || {};
-  let patientId;
-  const user = await User.findOne({phone});
-  if (user && user.role === roles.patient) {
-    patientId = user._id;
-    if (!user.inAccount) {
-      await editUserInfo({
-        userId: patientId,
-        fullName,
-        diseaseType,
-        birth,
-        sex,
-        role: roles.patient,
-        avatar
-      })
-    }
-  } else if (!user) {
-    const patient = new User({
-      fullName,
-      createdBy: actionUserId,
-      diseaseType,
-      inAccount: false,
-      role: roles.patient,
-      birth,
-      age: moment().diff(birth, 'years'),
-      avatar,
-      sex,
+
+  try {
+    const status = await addPatient({
+      actionUserId,
       phone,
-      password: 'password',
-    });
-    await patient.save();
-    await Health.create({
-      createdAt: +moment().format('X'),
-      patientId: patient._id,
-      age: moment().diff(birth, 'years'),
-      diseaseType,
+      note,
       fullName,
+      diseaseType,
+      birth,
       avatar,
-    })
-    patientId = patient._id;
-  } else {
+      sex
+    });
+    if (status) {
+      res.send({
+        status: true,
+        message: 'Thêm bệnh nhân thành công!'
+      });
+    } else {
+      res.send({
+        status: false,
+        message: 'Số điện thoại không hợp lệ!'
+      });
+    }
+  } catch (e) {
     res.send({
       status: false,
-      message: 'Số điện thoại không hợp lệ!'
+      message: JSON.stringify(e.message),
     });
   }
-  const relationship = await Relationship.findOne( {
-    $or: [
-      { userOneId: actionUserId, userTwoId: patientId },
-      { userOneId: patientId, userTwoId: actionUserId }
-    ]
-  }) || new Relationship({
-    userOneId: actionUserId,
-    userTwoId: patientId,
-  });
-  relationship.actionUserId = patientId;
-  relationship.status = relationalStatus.accepted;
-  relationship.actionAt = +moment().format('X');
-  if (relationship.userOneId === actionUserId) {
-    relationship.noteUserOne = note;
-  } else {
-    relationship.noteUserTwo = note;
-  }
-  await relationship.save();
-  res.send({
-    status: true,
-    message: 'Thêm bệnh nhân thành công!'
-  });
 });
 
 router.post('/edit-patient-info', async (req, res) => {
@@ -297,54 +246,36 @@ router.post('/edit-patient-info', async (req, res) => {
     sex,
     avatar,
   } = req.body || {};
-  let data = {};
-  const user = await User.findOne({_id: patientId});
-  if (!user) {
-    res.send({
-      status: false,
-      message: 'Lỗi!'
-    });
-    return;
-  }
-  if (user && !user.inAccount) {
-    data = await editUserInfo({
-      userId: patientId,
+
+  try {
+    const info = await editPatientInfo({
+      actionUserId,
+      patientId,
+      note,
       fullName,
       diseaseType,
       birth,
-      sex,
-      role: roles.patient,
-      avatar
-    })
-  };
-
-  const relationship = await Relationship.findOne( {
-    $or: [
-      { userOneId: actionUserId, userTwoId: patientId },
-      { userOneId: patientId, userTwoId: actionUserId }
-    ]
-  }) || new Relationship({
-    userOneId: actionUserId,
-    userTwoId: patientId,
-  });
-  relationship.actionUserId = patientId;
-  relationship.status = relationalStatus.accepted;
-  relationship.actionAt = +moment().format('X');
-  if (relationship.userOneId === actionUserId) {
-    relationship.noteUserOne = note;
-  } else {
-    relationship.noteUserTwo = note;
+      avatar,
+      sex
+    });
+    if (info.status) {
+      res.send({
+        status: true,
+        data: formatUserData(info.data),
+        message: 'Cập nhật thông tin thành công!',
+      });
+    } else {
+      res.send({
+        status: false,
+        message: 'Lỗi cập nhật!'
+      });
+    }
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
   }
-  await relationship.save();
-  data.note = note;
-  res.send({
-    status: true,
-    message: 'Cập nhật thông tin thành công!',
-    data: _.omit({
-      ...JSON.parse(JSON.stringify(data)),
-      note,
-    }, ['password', 'firebaseId']),
-  });
 });
 
 router.post('/edit-user-info', async (req, res) => {
@@ -360,22 +291,28 @@ router.post('/edit-user-info', async (req, res) => {
     _id,
     role,
   } = req.user;
-  const data = await editUserInfo({
-    userId: _id,
-    fullName,
-    diseaseType,
-    workHospital,
-    birth,
-    sex,
-    role,
-    avatar
-  })
-
-  res.send({
-    status: true,
-    message: 'Cập nhật thông tin thành công!',
-    data: _.omit(JSON.parse(JSON.stringify(data)), ['password', 'firebaseId'])
-  });
+  try {
+    const data = await editUserInfo({
+      userId: _id,
+      fullName,
+      diseaseType,
+      workHospital,
+      birth,
+      sex,
+      role,
+      avatar
+    })
+    res.send({
+      status: true,
+      data: formatUserData(data),
+      message: 'Cập nhật thông tin thành công!',
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
 });
 
 router.post('/edit-index-threshold', async (req, res) => {
@@ -386,20 +323,26 @@ router.post('/edit-index-threshold', async (req, res) => {
   const {
     _id,
   } = req.user;
+  try {
+    await User.findOneAndUpdate({
+      _id
+    }, {
+      $set: {
+        lowIndex: rounding(lowIndex),
+        highIndex: rounding(highIndex)
+      }
+    })
+    res.send({
+      status: true,
+      message: 'Cập nhật thành công!'
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
 
-  await User.findOneAndUpdate({
-    _id
-  }, {
-    $set: {
-      lowIndex: rounding(lowIndex),
-      highIndex: rounding(highIndex)
-    }
-  })
-
-  res.send({
-    status: true,
-    message: 'Thành công!'
-  });
 });
 
 router.post('/unfollow-patient', async (req, res) => {
@@ -420,7 +363,7 @@ router.post('/unfollow-patient', async (req, res) => {
       result.message = 'Đã hủy theo dõi!';
     }
   } catch (e) {
-    result.message = ERROR_MESSAGE_SERVER;
+    result.message = JSON.stringify(e.message);
   };
 
   res.send(result);

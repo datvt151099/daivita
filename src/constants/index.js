@@ -38,6 +38,12 @@ export const reportTypes = {
   comparisonChart: 'COMPARISON_CHART'
 }
 
+export const paperTypes =   {
+  DIET: 'Chế độ ăn uống',
+  DIABETES: 'Bệnh tiểu đường',
+  OTHER: 'Khác'
+};
+
 export const notifyTypes = {
   index: 'INDEX',
 }
