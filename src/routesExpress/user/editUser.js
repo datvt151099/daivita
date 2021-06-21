@@ -5,8 +5,25 @@ import User from "../../data/models/User";
 import Health from "../../data/models/Health";
 import mongoose from "../../data/mongoose";
 import {startTransaction} from "../helpers";
-import {setNote} from "../relationship";
+import {setNote} from "../relationship/setRelationship";
 
+const updateHealth = async ({role, userId, fullName, avatar, diseaseType, birth}) => {
+  if (role === roles.patient) {
+    await Health.findOneAndUpdate({
+      patientId: userId
+    }, {
+      $set: {
+        ...(fullName && {fullName}),
+        ...(avatar && {avatar }),
+        ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
+        ...(birth && {
+          age: moment().diff(birth, 'years'),
+        }),
+      }
+    })
+  };
+  return true;
+}
 const editUserInfo = async ({
                               userId,
                               fullName,
@@ -17,8 +34,15 @@ const editUserInfo = async ({
                               workHospital,
                               role = roles.patient
                             }) => {
-
   await Promise.all([
+    updateHealth({
+      role,
+      userId,
+      fullName,
+      avatar,
+      diseaseType,
+      birth
+    }),
     User.findOneAndUpdate({
       _id: userId
     }, {
@@ -31,23 +55,7 @@ const editUserInfo = async ({
       ...(Boolean(sex === 0 || sex) && {sex}),
       ...(workHospital && {workHospital}),
       ...(avatar && {avatar }),
-      // eslint-disable-next-line consistent-return
-    }), () => {
-      if (role === roles.patient) {
-        return Health.findOneAndUpdate({
-          patientId: userId
-        }, {
-          $set: {
-            ...(fullName && {fullName}),
-            ...(avatar && {avatar }),
-            ...(Boolean(diseaseType === 0 || diseaseType) && {diseaseType}),
-            ...(birth && {
-              age: moment().diff(birth, 'years'),
-            }),
-          }
-        })
-      }
-    }
+    })
   ]);
   const user = await User.findOne({_id: userId});
   return JSON.parse(JSON.stringify(user));
@@ -94,6 +102,7 @@ export const editPatientInfo = async ({
   } finally {
     await session.endSession();
   }
+  return result;
 }
 
 export default editUserInfo;

@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const schema = new mongoose.Schema({
   createdAt: { type: Number },
   currentIndex: { type: Number },
-  status: { type: Number },
   measureAt: { type: Number },
   patientId: { type: String },
   priority: { type: Number },

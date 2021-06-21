@@ -11,7 +11,8 @@ const schema = new mongoose.Schema({
     body: { type: String }
   },
   type: { type: String },
-  data: { type: String, default: "null"},
+  payload: { type: String, default: "null"},
+  isValid: { type: Boolean, default: true}
 }, { collection: 'notification' });
 
 schema.index({ userId: -1 }, { background: true });

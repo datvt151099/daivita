@@ -20,6 +20,7 @@ const schema = new mongoose.Schema({
   lowIndex: { type: Number, default: indexThreshold.low},
   workHospital: { type: String },
   firebaseId: { type: String },
+  myDoctorId: { type: String },
   registrationToken: { type: String },
 }, {collection: 'user'});
 

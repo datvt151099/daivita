@@ -27,6 +27,12 @@ export const dataTypes = {
   meal: 'MEAL'
 }
 
+export const followTypes = {
+  doctor: 'DOCTOR',
+  patient: 'PATIENT',
+  relative: 'RELATIVE',
+}
+
 export const indexThreshold = {
   high: 181.8,
   low: 68.4
@@ -46,4 +52,5 @@ export const paperTypes =   {
 
 export const notifyTypes = {
   index: 'INDEX',
+  follow: 'FOLLOW'
 }

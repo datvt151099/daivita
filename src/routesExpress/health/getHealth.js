@@ -1,7 +1,7 @@
 import Promise from "bluebird";
 import moment from "moment";
 import * as _ from "lodash";
-import {getNote} from "../relationship";
+import {getNote} from "../relationship/setRelationship";
 import User from "../../data/models/User";
 import Prescription from "../../data/models/Prescription";
 import Index from "../../data/models/Index";

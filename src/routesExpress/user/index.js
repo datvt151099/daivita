@@ -1,127 +1,20 @@
 /* eslint-disable no-console, consistent-return */
-import { Router } from 'express';
-import setRelationship from "./setRelationship";
-import {ERROR_MESSAGE_SERVER, relationalStatus, roles} from "../../constants";
+import {Router} from 'express';
+import moment from "moment";
+import * as _ from 'lodash';
+import {followTypes, relationalStatus, roles} from "../../constants";
 import getPatients from "./getPatients";
 import User from "../../data/models/User";
 import Relationship from "../../data/models/Relationship";
-import Health from "../../data/models/Health";
-import checkPermission from "./checkPermission";
 import {formatUserData, rounding} from "../helpers";
-import addPatient from "./addPatient";
+import addFollower from "./addFollower";
 import editUserInfo, {editPatientInfo} from "./editUser";
+import {getFollowers} from "../relationship/setRelationship";
+import validateAddFollower from "./validateAddFollower";
 
 const router = new Router();
 
 const ROWS_PER_PAGE = 10;
-
-router.post("/logout", async (req, res) => {
-  await User.findOneAndUpdate({_id: req.user._id}, {
-    $set: {
-      registrationToken: null,
-    }
-  })
-  res.send({
-    status: true,
-  });
-})
-
-
-router.post('/follow', async (req, res) => {
-  const { userId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    const status = await setRelationship({
-      actionUserId: userId,
-      userTwoId: actionUserId,
-      status: relationalStatus.accepted
-    });
-    if (status) {
-      result.status = true;
-      result.message = 'Đã gửi lời theo dõi';
-    }
-  } catch (e) {
-    result.message = ERROR_MESSAGE_SERVER;
-  };
-
-  res.send(result);
-});
-
-router.post('/accept-following', async (req, res) => {
-  const { userId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    const status = await setRelationship({
-      actionUserId,
-      userTwoId: userId,
-      status: relationalStatus.accepted
-    })
-    if (status) {
-      result.status = true;
-      result.message = 'Đã chấp nhận lời theo dõi';
-    }
-  } catch (e) {
-    result.message = ERROR_MESSAGE_SERVER;
-  };
-
-  res.send(result);
-});
-
-router.post('/decline-following', async (req, res) => {
-  const { userId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    const status = await setRelationship({
-      actionUserId,
-      userTwoId: userId,
-      status: relationalStatus.declined
-    })
-    if (status) {
-      result.status = true;
-      result.message = 'Từ chối lời theo dõi'
-    }
-  } catch (e) {
-    result.message = ERROR_MESSAGE_SERVER;
-  };
-
-  res.send(result);
-});
-
-router.post('/unfollow', async (req, res) => {
-  const { userId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    const status = await setRelationship({
-      actionUserId,
-      userTwoId: userId,
-      status: relationalStatus.blocked
-    })
-    if (status) {
-      result.status = true;
-      result.message = 'Đã hủy theo dõi';
-    }
-  } catch (e) {
-    result.message = ERROR_MESSAGE_SERVER;
-  };
-
-  res.send(result);
-});
 
 router.post('/get-patients', async (req, res) => {
   const { page = 1,  rowsPerPage = ROWS_PER_PAGE } = req.body || {};
@@ -139,23 +32,6 @@ router.post('/get-patients', async (req, res) => {
   }
 });
 
-router.post('/get-patient', async (req, res) => {
-  const { patientId } = req.body || {};
-  try {
-    const data = await Health.findOne({patientId})
-    res.send({
-      status: true,
-      data
-    });
-  } catch (e) {
-    res.send({
-      status: false,
-      message: JSON.stringify(e.message),
-    });
-  }
-});
-
-
 router.post('/validate-add-patient', async (req, res) => {
   const result = {
     status: false,
@@ -163,27 +39,31 @@ router.post('/validate-add-patient', async (req, res) => {
   };
   const { phone } = req.body || {};
   try {
-    const user = await User.findOne({phone});
-
-    if (!user) {
+    const patient = await User.findOne({phone});
+    if (!patient) {
       result.status = true;
-    } else if (user.role === roles.doctor) {
+    } else if (patient.role === roles.doctor) {
       result.message = 'Số điện thoại đã đăng ký tài khoản bác sĩ!';
     } else {
-      const relationship = await Relationship.findOne({
-        $or: [
-          { userOneId: req.user._id, userTwoId: user._id},
-          { userTwoId: user._id, userOneId: req.user._id},
-        ],
-        status: relationalStatus.accepted,
-      })
-
-      if (relationship) {
+      const followers = await getFollowers(patient._id);
+      if (!followers || followers.length === 0) {
+        result.status = true;
+        result.data = formatUserData(patient);
+      } else if (followers.includes(req.user._id)) {
         result.status = false;
         result.message = 'Bệnh nhân đã theo dõi!';
       } else {
-        result.status = true;
-        result.data = formatUserData(JSON.parse(JSON.stringify(user)));
+        const doctor = await User.findOne({
+          _id: {$in: followers},
+          role: roles.doctor
+        });
+        if (doctor) {
+          result.status = false;
+          result.message = 'Bệnh nhân đã được bác sĩ khác theo dõi!';
+        } else {
+          result.status = true;
+          result.data = formatUserData(patient);
+        }
       }
     }
   } catch (e) {
@@ -192,9 +72,21 @@ router.post('/validate-add-patient', async (req, res) => {
   res.send(result);
 });
 
+router.post('/validate-add-follower', async (req, res) => {
+  const {
+    phone,
+    type = followTypes.doctor,
+  } = req.body || {};
+  const result = await validateAddFollower({
+    phone,
+    type,
+    userId: req.user._id
+  });
+  res.send(result);
+});
 
 router.post('/add-patient', async (req, res) => {
-  const actionUserId = req.user._id;
+  const {_id: actionUserId, fullName: actionUserName} = req.user;
   const {
     phone,
     note,
@@ -206,7 +98,48 @@ router.post('/add-patient', async (req, res) => {
   } = req.body || {};
 
   try {
-    const status = await addPatient({
+    await addFollower({
+      actionUserId,
+      actionUserName,
+      phone,
+      note,
+      fullName,
+      diseaseType,
+      birth,
+      avatar,
+      sex,
+      type: followTypes.patient
+    });
+    res.send({
+      status: true,
+      message: 'Thêm bệnh nhân thành công!'
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
+});
+
+router.post('/add-follower', async (req, res) => {
+  const {_id: actionUserId, fullName: actionUserName} = req.user;
+  const {
+    userId,
+    phone,
+    note,
+    fullName,
+    diseaseType,
+    birth,
+    avatar,
+    sex,
+    type = followTypes.patient,
+  } = req.body || {};
+
+  try {
+    await addFollower({
+      userId,
+      actionUserName,
       actionUserId,
       phone,
       note,
@@ -214,25 +147,104 @@ router.post('/add-patient', async (req, res) => {
       diseaseType,
       birth,
       avatar,
-      sex
+      sex,
+      type
     });
-    if (status) {
-      res.send({
-        status: true,
-        message: 'Thêm bệnh nhân thành công!'
-      });
-    } else {
-      res.send({
-        status: false,
-        message: 'Số điện thoại không hợp lệ!'
-      });
-    }
+    res.send({
+      status: true,
+      message: 'Gửi yêu cầu thành công!'
+    });
   } catch (e) {
     res.send({
       status: false,
       message: JSON.stringify(e.message),
     });
   }
+});
+
+router.post('/unfollow-patient', async (req, res) => {
+  const { patientId } = req.body;
+  const actionUserId = req.user._id;
+  const result = {
+    status: false,
+    message: 'Không hợp lệ!'
+  };
+  try{
+    await Relationship.findOneAndUpdate( {
+      $or: [
+        { userOneId: actionUserId, userTwoId: patientId },
+        { userOneId: patientId, userTwoId: actionUserId },
+      ]
+    }, {
+      $set: {
+        actionUserId,
+        status: relationalStatus.blocked,
+        actionAt: +moment().format('X')
+      }
+    });
+    result.status = true;
+    result.message = 'Đã hủy theo dõi thành công!';
+  } catch (e) {
+    result.message = JSON.stringify(e.message);
+  };
+  res.send(result);
+});
+
+router.post('/my-doctor', async (req, res) => {
+  const result = {
+    status: false,
+    message: '',
+    data: null
+  };
+  const { myDoctorId, _id } = req.user;
+  console.log(req.user);
+  try{
+    if ( myDoctorId ) {
+      const relationship = await Relationship.findOne( {
+        $or: [
+          { userOneId: myDoctorId, userTwoId: _id },
+          { userOneId: _id, userTwoId: myDoctorId },
+        ],
+        status: {$in: [relationalStatus.accepted, relationalStatus.pending]}
+      })
+      console.log()
+      if (relationship) {
+        // eslint-disable-next-line no-empty
+        if (relationship.status === relationalStatus.pending && relationship.actionUserId === myDoctorId) {
+
+        } else {
+          const doctor = await User.findOne({_id: myDoctorId });
+          const accepted = relationship.status === relationalStatus.accepted;
+          result.data = doctor ? formatUserData(doctor, {accepted}) : null;
+        }
+      }
+    };
+    result.status = true;
+  } catch (e) {
+    result.message = JSON.stringify(e.message);
+  };
+  res.send(result);
+});
+
+router.post('/get-relatives', async (req, res) => {
+  const result = {
+    status: false,
+    message: '',
+    data: null
+  };
+  const { _id } = req.user;
+  try{
+    const followers = await getFollowers(_id);
+    const relatives = await User.find({
+      _id: {$in: followers},
+      role: roles.patient
+    });
+    result.data = _.map(relatives, i => formatUserData(i));
+    result.status = true;
+  } catch (e) {
+    result.message = JSON.stringify(e.message);
+  };
+  res.send(result);
 });
 
 router.post('/edit-patient-info', async (req, res) => {
@@ -345,50 +357,4 @@ router.post('/edit-index-threshold', async (req, res) => {
 
 });
 
-router.post('/unfollow-patient', async (req, res) => {
-  const { patientId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    const status = await setRelationship({
-      actionUserId,
-      userTwoId: patientId,
-      status: relationalStatus.blocked
-    })
-    if (status) {
-      result.status = true;
-      result.message = 'Đã hủy theo dõi!';
-    }
-  } catch (e) {
-    result.message = JSON.stringify(e.message);
-  };
-
-  res.send(result);
-});
-
-router.post('/set-special-patient', async (req, res) => {
-  const result = {
-    status: false,
-    message: ''
-  };
-  const { patientId, special } = req.body;
-  const isMatch = await checkPermission(req.user._id, patientId);
-  if (isMatch) {
-    await Health.findOneAndUpdate({
-      patientId
-    }, {
-      $set: {
-        special: Boolean(special)
-      }
-    })
-
-    result.status = true;
-    result.message = 'Đánh dấu thành công!';
-  }
-
-  res.send(result);
-});
 export default router;

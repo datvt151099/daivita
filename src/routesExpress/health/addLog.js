@@ -7,9 +7,9 @@ import {dataTypes} from "../../constants";
 import {rounding, startTransaction} from "../helpers";
 import mongoose from "../../data/mongoose";
 import updateHealth from "./updateHealth";
-import {genNotification} from "../notification";
+import genIndexNotification from "../notification/genNotification";
 
-const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, type}) => {
+const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, type, lowIndex, highIndex}) => {
   const now = +moment().format('X');
   const session = await mongoose.startSession();
   try {
@@ -30,7 +30,7 @@ const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, 
 
       await Promise.all([
         updateHealth(patientId),
-        genNotification({userId: patientId, measureAt: time, index: _.toNumber(value)})
+        genIndexNotification({userId: patientId, measureAt: time, index: _.toNumber(value), lowIndex, highIndex})
       ])
     } else {
       await Meal.create({

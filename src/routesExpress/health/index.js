@@ -11,7 +11,7 @@ import {getHealthInfo, getHealthLogs, getHealthReport} from "./getHealth";
 const router = new Router();
 
 router.post('/add-log', async (req, res) => {
-  const createdBy = req.user._id;
+  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high, _id: createdBy } = req.user;
   const { time = +moment().format('X'), value, patientId = createdBy, note, tag, type } = req.body;
   try {
     await addLog({
@@ -22,7 +22,9 @@ router.post('/add-log', async (req, res) => {
       tag,
       time,
       note,
-      type
+      type,
+      lowIndex,
+      highIndex
     });
     res.send({
       status: true,
@@ -83,7 +85,6 @@ router.post('/get-health-info', async (req, res) => {
   }
 });
 
-
 router.post('/get-health-logs', async (req, res) => {
   const { patientId, days, type = dataTypes.all } = req.body;
   try {
@@ -99,7 +100,6 @@ router.post('/get-health-logs', async (req, res) => {
     });
   }
 });
-
 
 router.post('/get-health-report', async (req, res) => {
   const {
@@ -213,6 +213,10 @@ router.post('/get-papers', async (req, res) => {
             }
           }
         }
+      }, {
+        $sort: {
+          _id: 1
+        }
       }
     ]).allowDiskUse(true);
 
@@ -231,5 +235,6 @@ router.post('/get-papers', async (req, res) => {
     });
   }
 })
+
 export default router;
 

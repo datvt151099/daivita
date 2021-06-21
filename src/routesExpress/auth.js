@@ -2,12 +2,11 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import moment from "moment";
-import * as _ from "lodash";
 import config from '../config';
 import User from "../data/models/User";
 import {ERROR_MESSAGE_SERVER, roles} from "../constants";
-// import Relationship from "../data/models/Relationship";
 import Health from "../data/models/Health";
+import {formatUserData} from "./helpers";
 
 const router = new Router();
 
@@ -23,20 +22,20 @@ export const generateToken = (user) => {
 router.post('/login', async (req, res) => {
   const result = {
     status: false,
-    message: ''
+    message: "Tài khoản chưa đăng ký!"
   };
   const { phone, password, token } = req.body;
 
   try {
     const user = await User.findOne({ phone });
 
-    if (user) {
+    if (user && user.inAccount) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
         user.registrationToken = token;
         await user.save();
-        const userInfo = _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']);
-        const {accessToken, expiresIn } = generateToken({_id: userInfo._id});
+        const userInfo = formatUserData(user);
+        const {accessToken, expiresIn} = generateToken({_id: userInfo._id});
         result.status = true;
         result.data = {
           accessToken,
@@ -47,8 +46,6 @@ router.post('/login', async (req, res) => {
       } else {
         result.message = "Sai mật khẩu!"
       }
-    } else {
-      result.message = "Tài khoản không tồn tại!"
     }
   } catch (e) {
     result.message = ERROR_MESSAGE_SERVER;
@@ -78,7 +75,7 @@ router.post("/register", async (req, res) => {
 
   try {
     const user = await User.findOne({phone});
-    if (user) result.message = "Tài khoản đã tồn tại!";
+    if (user && user.inAccount) result.message = "Tài khoản đã tồn tại!";
     else {
       const newUser = new User({
         phone,
@@ -105,7 +102,7 @@ router.post("/register", async (req, res) => {
           fullName,
         })
       };
-      const userInfo = _.omit(JSON.parse(JSON.stringify(newUser)), ['password', 'firebaseId']);
+      const userInfo = formatUserData(newUser);
       const { accessToken, expiresIn } = generateToken({_id: userInfo._id});
       result.status = true;
       result.data = {
@@ -135,7 +132,35 @@ router.post("/get-user-by-phone", async (req, res) => {
   try {
     const user = await User.findOne({phone});
     result.status = true;
-    result.data = user ? _.omit(JSON.parse(JSON.stringify(user)), ['password', 'firebaseId']) : user;
+    result.data = formatUserData(user);
+  } catch (e) {
+    console.log(JSON.stringify(e))
+    result.message = ERROR_MESSAGE_SERVER;
+  }
+  res.status(200).send(result);
+})
+
+router.post("/get-user", async (req, res) => {
+  const {
+    phone,
+    _id
+  } = req.body;
+
+  const result = {
+    status: false,
+    message: ''
+  };
+
+  try {
+    const user = await User.findOne({
+        $or: [
+          {_id},
+          {phone},
+        ]
+      }
+    );
+    result.status = true;
+    result.data = formatUserData(user);
   } catch (e) {
     console.log(JSON.stringify(e))
     result.message = ERROR_MESSAGE_SERVER;

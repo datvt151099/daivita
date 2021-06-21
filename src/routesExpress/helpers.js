@@ -15,8 +15,15 @@ export const rounding = (value, decimal = 1) => {
   return Math.round(_.toNumber(value) * x) / x;
 }
 
-export const formatUserData = (user) => {
-  return _.omit(user, ['password', 'firebaseId', 'registrationToken']);
+export const formatUserData = (user, o) => {
+  const result = JSON.parse(JSON.stringify(user));
+  if (result) {
+    return _.omit({
+      ...result,
+      ...o
+    }, ['password', 'firebaseId', 'registrationToken']);
+  };
+  return null;
 };
 
 
