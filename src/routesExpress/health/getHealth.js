@@ -8,7 +8,8 @@ import Index from "../../data/models/Index";
 import Meal from "../../data/models/Meal";
 // eslint-disable-next-line import/named
 import {formatUserData, rounding} from "../helpers";
-import {dataTypes, reportTypes} from "../../constants";
+import {dataTypes, indexThreshold, reportTypes, roles} from "../../constants";
+import Health from "../../data/models/Health";
 
 export const getHealthInfo = async ({userId, patientId, lowIndex, highIndex}) => {
   const [
@@ -268,5 +269,44 @@ export const getHealthReport = async ({ patientId, startDate, endDate, startDate
       return null;
   }
 }
+
+export const getHealthOverview = async (patientId, lowIndex, highIndex) => {
+  const health = await Health.findOne({patientId}, {
+    _id: 0,
+    currentIndex: 1,
+    steps: 1,
+    heartRate: 1,
+    weight: 1,
+    symptoms: 1,
+    measureAt: 1,
+    patientId: 1,
+    avgIndex: 1
+  });
+  return health ? {
+    ...JSON.parse(JSON.stringify(health)),
+    lowIndex,
+    highIndex,
+  } : null;
+}
+
+export const getIndexThreshold = async (user, patientId) => {
+  if (user.role === roles.doctor) {
+    const { highIndex = indexThreshold.high, lowIndex =indexThreshold.low, _id } = user || {};
+    return {
+      highIndex,
+      lowIndex,
+      doctorId: _id
+    }
+  }
+  const patient = await User.findOne({_id: patientId});
+  const doctor = await User.findOne({_id: patient.myDoctorId})
+  const { highIndex = indexThreshold.high, lowIndex = indexThreshold.low } = doctor || {};
+  return {
+    highIndex,
+    lowIndex,
+    doctorId: patient.myDoctorId,
+  }
+}
+
 
 export default getHealthInfo;

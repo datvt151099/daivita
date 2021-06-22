@@ -22,7 +22,7 @@ const addPatient = async ({
                             sex
 }) => {
   const user = await User.findOne({phone});
-  if (user && user.role === roles.patient) {
+  if (user) {
     if (!user.inAccount) {
       await editUserInfo({
         userId: user._id,

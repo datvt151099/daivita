@@ -66,7 +66,7 @@ router.post('/edit-prescription', async (req, res) => {
 
 router.post('/get-prescription-history', async (req, res) => {
   const {
-    patientId
+    patientId = req.user._id
   } = req.body;
   try {
     const data = await Prescription.find({
@@ -83,6 +83,28 @@ router.post('/get-prescription-history', async (req, res) => {
         message: JSON.stringify(e.message),
       });
     }
+});
+
+router.post('/get-prescription', async (req, res) => {
+  const {
+    patientId = req.user._id
+  } = req.body;
+  try {
+    const data = await Prescription
+      .find({patientId})
+      .sort({createdAt: -1})
+      .limit(1);
+
+    res.send({
+      status: true,
+      data: data ? data[0] : null
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
 });
 
 export default router;

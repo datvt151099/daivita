@@ -2,17 +2,57 @@
 import { Router } from 'express';
 import * as _ from "lodash";
 import moment from "moment";
-import {dataTypes, indexThreshold, paperTypes, reportTypes} from "../../constants";
+import {dataTypes, paperTypes, reportTypes} from "../../constants";
 import Paper from "../../data/models/Paper";
 import addLog from "./addLog";
 import editLog from "./editLog";
-import {getHealthInfo, getHealthLogs, getHealthReport} from "./getHealth";
+import {getHealthInfo, getHealthLogs, getHealthOverview, getHealthReport, getIndexThreshold} from "./getHealth";
+import Health from "../../data/models/Health";
 
 const router = new Router();
 
+router.post('/add-index', async (req, res) => {
+  const { type, value } = req.body;
+  const setData = {};
+  switch (type) {
+    case dataTypes.heartRate:
+      setData.heartRate = value;
+      break;
+    case dataTypes.steps:
+      setData.steps = value;
+      break;
+    case dataTypes.weight:
+      setData.weight = value;
+      break;
+    case dataTypes.symptoms:
+      setData.symptoms = value;
+      break;
+    default:
+      break;
+  }
+  try {
+    await Health.findOneAndUpdate({
+      patientId: req.user._id
+    }, {
+      $set: setData
+    })
+    res.send({
+      status: true,
+      message: 'Thêm thành công!'
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
+});
+
+
 router.post('/add-log', async (req, res) => {
-  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high, _id: createdBy } = req.user;
+  const { _id: createdBy } = req.user;
   const { time = +moment().format('X'), value, patientId = createdBy, note, tag, type } = req.body;
+  const { lowIndex, highIndex } = await getIndexThreshold(req.user, patientId);
   try {
     await addLog({
       patientId,
@@ -64,11 +104,11 @@ router.post('/edit-log', async (req, res) => {
 });
 
 router.post('/get-health-info', async (req, res) => {
-  const { patientId } = req.body;
-  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high, _id } = req.user;
+  const { patientId = req.user._id } = req.body;
+  const { lowIndex, highIndex, doctorId } = await getIndexThreshold(req.user, patientId);
   try {
     const data = await getHealthInfo({
-      userId: _id,
+      userId: doctorId,
       lowIndex,
       highIndex,
       patientId,
@@ -86,7 +126,7 @@ router.post('/get-health-info', async (req, res) => {
 });
 
 router.post('/get-health-logs', async (req, res) => {
-  const { patientId, days, type = dataTypes.all } = req.body;
+  const { patientId = req.user._id, days, type = dataTypes.all } = req.body;
   try {
     const data = await getHealthLogs({patientId, days, type});
     res.send({
@@ -103,14 +143,14 @@ router.post('/get-health-logs', async (req, res) => {
 
 router.post('/get-health-report', async (req, res) => {
   const {
-    patientId,
+    patientId = req.user._id,
     startDate,
     endDate,
     startDate1,
     endDate1,
     reportType = reportTypes.lineChart
   } = req.body;
-  const { lowIndex = indexThreshold.low, highIndex = indexThreshold.high } = req.user;
+  const { lowIndex, highIndex } = await getIndexThreshold(req.user, patientId);
   try {
     const data = await getHealthReport({
       patientId,
@@ -133,6 +173,24 @@ router.post('/get-health-report', async (req, res) => {
     });
   }
 });
+
+router.post('/get-health-overview', async (req, res) => {
+  const { patientId = req.user._id } = req.body;
+  const { highIndex, lowIndex } = await getIndexThreshold(req.user, patientId);
+  console.log(highIndex, lowIndex);
+  try {
+    const data = await getHealthOverview(patientId, lowIndex, highIndex);
+    res.send({
+      status: true,
+      data
+    });
+  } catch (e) {
+    res.send({
+      status: false,
+      message: JSON.stringify(e.message),
+    });
+  }
+})
 
 router.post('/get-papers', async (req, res) => {
   // await Paper.insertMany([

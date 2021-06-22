@@ -24,7 +24,11 @@ export const relationalStatus = {
 export const dataTypes = {
   all: 'ALL',
   index: 'INDEX',
-  meal: 'MEAL'
+  meal: 'MEAL',
+  steps: 'STEPS',
+  heartRate: 'HEART_RATE',
+  weight: 'WEIGHT',
+  symptoms: 'SYMPTOMS',
 }
 
 export const followTypes = {

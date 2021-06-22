@@ -1,6 +1,5 @@
 import User from "../../data/models/User";
 import {followTypes, roles} from "../../constants";
-import {getFollowers} from "../relationship/setRelationship";
 import {formatUserData} from "../helpers";
 
 const validateAddPatient = async (phone, doctorId) => {
@@ -8,34 +7,21 @@ const validateAddPatient = async (phone, doctorId) => {
     status: false,
     message: ''
   };
-  // TODO: sửa lại api (myDoctorId)
   try {
     const patient = await User.findOne({phone});
     if (!patient) {
       result.status = true;
     } else if (patient.role === roles.doctor) {
       result.message = 'Số điện thoại đã đăng ký tài khoản bác sĩ!';
-    } else {
-      const followers = await getFollowers(patient._id);
-      if (!followers || followers.length === 0) {
-        result.status = true;
-        result.data = formatUserData(patient);
-      } else if (followers.includes(doctorId)) {
+    } else if (patient.myDoctorId === doctorId) {
         result.status = false;
         result.message = 'Bệnh nhân đã theo dõi!';
-      } else {
-        const doctor = await User.findOne({
-          _id: {$in: followers},
-          role: roles.doctor
-        });
-        if (doctor) {
-          result.status = false;
-          result.message = 'Bệnh nhân đã được bác sĩ khác theo dõi!';
-        } else {
-          result.status = true;
-          result.data = formatUserData(patient);
-        }
-      }
+    } else if (patient.myDoctorId && patient.myDoctorId !== doctorId) {
+        result.status = false;
+        result.message = 'Bệnh nhân đã được bác sĩ khác theo dõi!';
+    } else {
+        result.status = true;
+        result.data = formatUserData(patient);
     }
   } catch (e) {
     result.message = JSON.stringify(e.message);

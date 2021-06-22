@@ -116,6 +116,62 @@ router.post('/remove-follower', async (req, res) => {
         }
       })
     }
+    if (type === followTypes.patient) {
+      await Notification.updateMany({
+        fromUserId: userId,
+        toUserId: actionUserId,
+        type: notifyTypes.index
+      }, {
+        $set: {
+          isValid: false
+        }
+      })
+    } else if (type === followTypes.doctor || type === followTypes.relative) {
+      await Notification.updateMany({
+        fromUserId: actionUserId,
+        toUserId: userId,
+        type: notifyTypes.index
+      }, {
+        $set: {
+          isValid: false
+        }
+      })
+    }
+
+    result.status = true;
+    result.message = 'Thành công!';
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    result.message = JSON.stringify(error.message);
+  } finally {
+    await session.endSession();
+  }
+  res.send(result);
+});
+
+router.post('/unfollow-patient', async (req, res) => {
+  const { patientId } = req.body;
+  const actionUserId = req.user._id;
+  const result = {
+    status: false,
+    message: 'Không hợp lệ!'
+  };
+  const session = await mongoose.startSession();
+  try {
+    startTransaction(session);
+    await setRelationship({
+      actionUserId,
+      userTwoId: patientId,
+      status: relationalStatus.blocked
+    });
+    await User.findOneAndUpdate({
+      _id: patientId,
+    }, {
+      $set: {
+        myDoctorId: null
+      }
+    })
     result.status = true;
     result.message = 'Thành công!';
     await session.commitTransaction();

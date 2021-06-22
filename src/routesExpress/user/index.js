@@ -1,6 +1,5 @@
 /* eslint-disable no-console, consistent-return */
 import {Router} from 'express';
-import moment from "moment";
 import * as _ from 'lodash';
 import {followTypes, relationalStatus, roles} from "../../constants";
 import getPatients from "./getPatients";
@@ -33,42 +32,13 @@ router.post('/get-patients', async (req, res) => {
 });
 
 router.post('/validate-add-patient', async (req, res) => {
-  const result = {
-    status: false,
-    message: ''
-  };
   const { phone } = req.body || {};
-  try {
-    const patient = await User.findOne({phone});
-    if (!patient) {
-      result.status = true;
-    } else if (patient.role === roles.doctor) {
-      result.message = 'Số điện thoại đã đăng ký tài khoản bác sĩ!';
-    } else {
-      const followers = await getFollowers(patient._id);
-      if (!followers || followers.length === 0) {
-        result.status = true;
-        result.data = formatUserData(patient);
-      } else if (followers.includes(req.user._id)) {
-        result.status = false;
-        result.message = 'Bệnh nhân đã theo dõi!';
-      } else {
-        const doctor = await User.findOne({
-          _id: {$in: followers},
-          role: roles.doctor
-        });
-        if (doctor) {
-          result.status = false;
-          result.message = 'Bệnh nhân đã được bác sĩ khác theo dõi!';
-        } else {
-          result.status = true;
-          result.data = formatUserData(patient);
-        }
-      }
-    }
-  } catch (e) {
-    result.message = JSON.stringify(e.message);
-  }
+
+  const result = await validateAddFollower({
+    phone,
+    type: followTypes.patient,
+    userId: req.user._id
+  });
   res.send(result);
 });
 
@@ -160,34 +130,6 @@ router.post('/add-follower', async (req, res) => {
       message: JSON.stringify(e.message),
     });
   }
-});
-
-router.post('/unfollow-patient', async (req, res) => {
-  const { patientId } = req.body;
-  const actionUserId = req.user._id;
-  const result = {
-    status: false,
-    message: 'Không hợp lệ!'
-  };
-  try{
-    await Relationship.findOneAndUpdate( {
-      $or: [
-        { userOneId: actionUserId, userTwoId: patientId },
-        { userOneId: patientId, userTwoId: actionUserId },
-      ]
-    }, {
-      $set: {
-        actionUserId,
-        status: relationalStatus.blocked,
-        actionAt: +moment().format('X')
-      }
-    });
-    result.status = true;
-    result.message = 'Đã hủy theo dõi thành công!';
-  } catch (e) {
-    result.message = JSON.stringify(e.message);
-  };
-  res.send(result);
 });
 
 router.post('/my-doctor', async (req, res) => {
