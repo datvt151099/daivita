@@ -104,6 +104,7 @@ const getPipeline = (patientId, days, type) => {
         value: type === dataTypes.index ? '$index' : '$food',
         note: true,
         tag: true,
+        image: true,
         type,
       }
     }

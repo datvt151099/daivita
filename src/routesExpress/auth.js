@@ -57,6 +57,7 @@ router.post("/register", async (req, res) => {
   const {
     phone,
     email,
+    avatar,
     fullName,
     password,
     diseaseType,
@@ -87,6 +88,7 @@ router.post("/register", async (req, res) => {
         role,
         inAccount: true,
         birth,
+        avatar,
         workHospital,
         sex,
         firebaseId,
@@ -100,6 +102,7 @@ router.post("/register", async (req, res) => {
           age: moment().diff(birth, 'years'),
           diseaseType,
           fullName,
+          avatar,
         })
       };
       const userInfo = formatUserData(newUser);

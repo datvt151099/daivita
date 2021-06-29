@@ -7,7 +7,7 @@ import updateHealth from "./updateHealth";
 import mongoose from "../../data/mongoose";
 
 
-const editLog = async ({updatedBy, logId, tag, type, note, value, time}) => {
+const editLog = async ({updatedBy, logId, tag, type, note, image, value, time}) => {
   const now = +moment().format('X');
   const session = await mongoose.startSession();
   try {
@@ -24,6 +24,7 @@ const editLog = async ({updatedBy, logId, tag, type, note, value, time}) => {
           ...(value && { index: rounding(value) }),
           ...(note && { note }),
           ...(tag && { tag }),
+          ...(image && { image }),
           updatedAt: now,
           updatedBy
         }
@@ -42,6 +43,7 @@ const editLog = async ({updatedBy, logId, tag, type, note, value, time}) => {
           ...(value && { food: value }),
           ...(note && { note }),
           ...(tag && { tag }),
+          ...(image && { image }),
           updatedAt: now,
           updatedBy
         }

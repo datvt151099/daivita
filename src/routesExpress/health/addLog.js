@@ -9,7 +9,7 @@ import mongoose from "../../data/mongoose";
 import updateHealth from "./updateHealth";
 import genIndexNotification from "../notification/genNotification";
 
-const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, type, lowIndex, highIndex}) => {
+const addLog = async ({patientId, createdBy, updatedBy, tag, time, image, value, note, type, lowIndex, highIndex}) => {
   const now = +moment().format('X');
   const session = await mongoose.startSession();
   try {
@@ -25,6 +25,7 @@ const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, 
         tag,
         patientId,
         index: rounding(value),
+        image,
         note
       })
 
@@ -42,6 +43,7 @@ const addLog = async ({patientId, createdBy, updatedBy, tag, time, value, note, 
         eatDate: moment(time, 'X').format('YYYY-MM-DD'),
         food: value,
         patientId,
+        image,
         tag,
         note
       })

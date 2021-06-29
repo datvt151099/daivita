@@ -1,6 +1,7 @@
 import User from "../../data/models/User";
-import {followTypes, roles} from "../../constants";
+import {followTypes, relationalStatus, roles} from "../../constants";
 import {formatUserData} from "../helpers";
+import Relationship from "../../data/models/Relationship";
 
 const validateAddPatient = async (phone, doctorId) => {
   const result = {
@@ -51,7 +52,7 @@ const validateAddDoctor = async (phone) => {
   return result;
 }
 
-const validateAddRelative = async (phone) => {
+const validateAddRelative = async (phone, userId) => {
   const result = {
     status: false,
     message: '',
@@ -63,8 +64,20 @@ const validateAddRelative = async (phone) => {
       inAccount: true
     });
     if (patient) {
-      result.status = true;
-      result.data = formatUserData(patient);
+      const relationship = await Relationship.findOne({
+        $or: [
+          {userOneId: userId, userTwoId: patient._id},
+          {userOneId: patient._id, userTwoId: userId}
+        ],
+        status: relationalStatus.accepted
+      })
+
+      if (relationship) {
+        result.message = 'Bệnh nhân đã kết nối!';
+      } else {
+        result.status = true;
+        result.data = formatUserData(patient);
+      }
     } else {
       result.message = 'Tài khoản không tồn tại!'
     }
@@ -79,9 +92,9 @@ const validateAddFollower = async ({userId, phone, type}) => {
     case followTypes.patient:
       return validateAddPatient(phone, userId);
     case followTypes.doctor:
-      return validateAddDoctor(phone);
+      return validateAddDoctor(phone, userId);
     case followTypes.relative:
-      return validateAddRelative(phone);
+      return validateAddRelative(phone, userId);
     default:
       return {
         status: false,

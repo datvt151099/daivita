@@ -11,6 +11,7 @@ const schema = new mongoose.Schema({
   patientId: { type: String },
   tag: {type: Number},
   note: { type: String },
+  image: { type: String }
 }, {collection: 'index'});
 
 schema.index({ patientId: 1, measureAt: -1 }, { background: true });

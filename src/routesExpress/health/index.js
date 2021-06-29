@@ -51,7 +51,7 @@ router.post('/add-index', async (req, res) => {
 
 router.post('/add-log', async (req, res) => {
   const { _id: createdBy } = req.user;
-  const { time = +moment().format('X'), value, patientId = createdBy, note, tag, type } = req.body;
+  const { time = +moment().format('X'), value, patientId = createdBy, note, tag, type, image } = req.body;
   const { lowIndex, highIndex } = await getIndexThreshold(req.user, patientId);
   try {
     await addLog({
@@ -63,6 +63,7 @@ router.post('/add-log', async (req, res) => {
       time,
       note,
       type,
+      image,
       lowIndex,
       highIndex
     });
@@ -80,7 +81,7 @@ router.post('/add-log', async (req, res) => {
 
 router.post('/edit-log', async (req, res) => {
   const updatedBy = req.user._id;
-  const { logId, tag, type, note, value, time } = req.body;
+  const { logId, tag, type, note, value, time, image } = req.body;
   try {
     await editLog({
       updatedBy,
@@ -89,6 +90,7 @@ router.post('/edit-log', async (req, res) => {
       type,
       note,
       value,
+      image,
       time,
     });
     res.send({

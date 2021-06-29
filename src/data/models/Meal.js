@@ -11,6 +11,7 @@ const schema = new mongoose.Schema({
   food: { type: String },
   patientId: { type: String },
   note: { type: String },
+  image: { type: String }
 }, {collection: 'meal'});
 
 schema.index({ patientId: 1, eatAt: -1 }, { background: true });
