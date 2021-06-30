@@ -15,6 +15,7 @@ import './data/mongoose';
 import schema from './data/schema';
 import { formatError } from './data/graphql/baseResolver';
 import User from "./data/models/User";
+import upload from "./routesExpress/upload";
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -34,8 +35,8 @@ app.set('trust proxy', config.trustProxy);
 // -----------------------------------------------------------------------------
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json({limit: '50mb'}));
 
 //
 // Authentication
@@ -114,6 +115,7 @@ app.use(
 );
 
 app.use('/auth', auth);
+app.use('/upload', upload);
 app.use('/api', authenticateJWT, routesExpress);
 //
 // Error handling
