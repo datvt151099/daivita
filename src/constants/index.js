@@ -56,5 +56,9 @@ export const paperTypes =   {
 
 export const notifyTypes = {
   index: 'INDEX',
-  follow: 'FOLLOW'
+  follow: 'FOLLOW',
+  appointment: 'APPOINTMENT',
 }
+
+
+export const avatarDefault = 'https://www.premierchoicegroup.com/wp-content/uploads/place-holder-avatar.jpg';

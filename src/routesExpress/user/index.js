@@ -1,7 +1,7 @@
 /* eslint-disable no-console, consistent-return */
 import {Router} from 'express';
 import * as _ from 'lodash';
-import {followTypes, relationalStatus, roles} from "../../constants";
+import {avatarDefault, followTypes, relationalStatus, roles} from "../../constants";
 import getPatients from "./getPatients";
 import User from "../../data/models/User";
 import Relationship from "../../data/models/Relationship";
@@ -76,7 +76,7 @@ router.post('/add-patient', async (req, res) => {
       fullName,
       diseaseType,
       birth,
-      avatar,
+      avatar: avatar || avatarDefault,
       sex,
       type: followTypes.patient
     });
@@ -116,7 +116,7 @@ router.post('/add-follower', async (req, res) => {
       fullName,
       diseaseType,
       birth,
-      avatar,
+      avatar: avatar || avatarDefault,
       sex,
       type
     });
@@ -209,7 +209,7 @@ router.post('/edit-patient-info', async (req, res) => {
       fullName,
       diseaseType,
       birth,
-      avatar,
+      avatar: avatar || avatarDefault,
       sex
     });
     if (info.status) {
@@ -254,7 +254,7 @@ router.post('/edit-user-info', async (req, res) => {
       birth,
       sex,
       role,
-      avatar
+      avatar: avatar || avatarDefault,
     })
     res.send({
       status: true,

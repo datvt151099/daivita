@@ -20,17 +20,31 @@ router.post('/accept-following', async (req, res) => {
   const session = await mongoose.startSession();
   try {
     startTransaction(session);
-    await setRelationship({
-      actionUserId,
-      userTwoId: userId,
-      status: relationalStatus.accepted,
-      note
-    });
-    await Notification.remove({
-      fromUserId: userId,
-      toUserId: actionUserId,
-      type: notifyTypes.follow
-    });
+    const user = await User.findOne({_id: userId });
+    if (user) {
+      await Promise.all([
+        setRelationship({
+          actionUserId,
+          userTwoId: userId,
+          status: relationalStatus.accepted,
+          note
+        }),
+        Notification.remove({
+          fromUserId: userId,
+          toUserId: actionUserId,
+          type: notifyTypes.follow
+        })
+      ])
+      if (user.role === roles.doctor) {
+        await User.findOneAndUpdate({
+          _id: actionUserId,
+        }, {
+          $set: {
+            myDoctorId: userId
+          }
+        })
+      }
+    }
     result.status = true;
     result.message = 'Đã chấp nhận lời theo dõi!';
     await session.commitTransaction();
@@ -95,6 +109,7 @@ router.post('/remove-follower', async (req, res) => {
     type
   } = req.body || {};
 
+  console.log(type, "=========");
   const result = {
     status: false,
     message: 'Không hợp lệ!'
@@ -170,6 +185,15 @@ router.post('/unfollow-patient', async (req, res) => {
     }, {
       $set: {
         myDoctorId: null
+      }
+    })
+    await Notification.updateMany({
+      fromUserId: actionUserId,
+      toUserId: patientId,
+      type: notifyTypes.index
+    }, {
+      $set: {
+        isValid: false
       }
     })
     result.status = true;

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import moment from "moment";
 import config from '../config';
 import User from "../data/models/User";
-import {ERROR_MESSAGE_SERVER, roles} from "../constants";
+import {avatarDefault, ERROR_MESSAGE_SERVER, roles} from "../constants";
 import Health from "../data/models/Health";
 import {formatUserData} from "./helpers";
 
@@ -57,7 +57,7 @@ router.post("/register", async (req, res) => {
   const {
     phone,
     email,
-    avatar,
+    avatar = avatarDefault,
     fullName,
     password,
     diseaseType,

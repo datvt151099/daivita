@@ -22,9 +22,9 @@ const editLog = async ({updatedBy, logId, tag, type, note, image, value, time}) 
             measureDate: moment(time, 'X').format('YYYY-MM-DD'),
           }),
           ...(value && { index: rounding(value) }),
-          ...(note && { note }),
-          ...(tag && { tag }),
-          ...(image && { image }),
+          note,
+          tag,
+          image,
           updatedAt: now,
           updatedBy
         }
@@ -41,9 +41,9 @@ const editLog = async ({updatedBy, logId, tag, type, note, image, value, time}) 
             eatDate: moment(time, 'X').format('YYYY-MM-DD'),
           }),
           ...(value && { food: value }),
-          ...(note && { note }),
-          ...(tag && { tag }),
-          ...(image && { image }),
+          note,
+          tag,
+          image,
           updatedAt: now,
           updatedBy
         }

@@ -20,6 +20,7 @@ router.post('/get-notifications', async (req, res) => {
     notification: 1,
     type: 1,
     payload: 1,
+    isValid: 1
   }).sort({
     createdAt: -1
   })

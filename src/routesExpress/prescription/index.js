@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import moment from "moment";
 import Prescription from "../../data/models/Prescription";
+import User from "../../data/models/User";
 
 const router = new Router();
 
@@ -69,9 +70,50 @@ router.post('/get-prescription-history', async (req, res) => {
     patientId = req.user._id
   } = req.body;
   try {
-    const data = await Prescription.find({
-      patientId
-    }).sort({ createdAt: -1 })
+    const data = await Prescription.aggregate([
+      {
+        $match: {
+          patientId
+        }
+      },
+      {
+        $lookup: {
+          let: {
+            userId: {
+              "$toObjectId": '$createdBy'
+            }
+          },
+          from: "user",
+          pipeline: [{
+            "$match": {
+              "$expr": {
+                "$eq": ["$_id", "$$userId"]
+              }
+            }
+          }],
+          as: "user"
+        }
+      },
+      {
+        $unwind: '$user'
+      },
+      {
+        $sort: {
+          createdAt: -1
+        }
+      },
+      {
+        $project: {
+          createdAt: true,
+          updatedAt: true,
+          createdBy: true,
+          creatorName: '$user.fullName',
+          patientId: true,
+          medicines: true,
+          note: true,
+        }
+      }
+    ])
 
     res.send({
       status: true,
@@ -94,6 +136,12 @@ router.post('/get-prescription', async (req, res) => {
       .find({patientId})
       .sort({createdAt: -1})
       .limit(1);
+
+    const prescription = data ? data[0] : null;
+    if (prescription) {
+      const doctor = await User.findOne({_id: prescription.createdBy});
+      prescription.creatorName = doctor.fullName;
+    }
 
     res.send({
       status: true,
