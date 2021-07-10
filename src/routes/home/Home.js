@@ -180,9 +180,9 @@ function Home() {
   return (
     <div className={s.root}>
       <div className={s.container}>
-        <Box display='flex' justifyContent='space-between' style={{marginTop: 10, marginBottom: 10}}>
-          <h3>QUẢN LÝ THÔNG TIN Y TẾ</h3>
-          <Box alignSelf="center" style={{marginRight: 20}}>
+      <Box mb={2} display="flex" justifyContent="space-between" style={{marginTop: 20}}>
+        <h3>QUẢN LÝ THÔNG TIN Y TẾ</h3>
+          <div>
             <Fab
               size="medium"
               color="primary"
@@ -194,7 +194,7 @@ function Home() {
             >
               <AddIcon fontSize="small" />
             </Fab>
-          </Box>
+          </div>
         </Box>
         <Paper open={open} handleClose={handleClose} setOpen={setOpen} callback={refetch} />
         <Card>
