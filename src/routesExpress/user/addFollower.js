@@ -35,7 +35,7 @@ const addPatient = async ({
       })
     } else {
       const title = "Yêu cầu theo dõi";
-      const body = `Bác sĩ ${actionUserName} muốn được thêm bạn vào danh sách theo dõi`;
+      const body = `Bác sĩ ${actionUserName} muốn thêm bạn vào danh sách theo dõi`;
       const payload = JSON.stringify({
         userId: actionUserId
       });

@@ -13,7 +13,7 @@ import validateAddFollower from "./validateAddFollower";
 
 const router = new Router();
 
-const ROWS_PER_PAGE = 10;
+const ROWS_PER_PAGE = 20;
 
 router.post('/get-patients', async (req, res) => {
   const { page = 1,  rowsPerPage = ROWS_PER_PAGE } = req.body || {};

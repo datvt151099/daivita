@@ -11,7 +11,8 @@ export const diseaseTypes = {
 export const roles = {
   admin: 0,
   doctor: 1,
-  patient: 2
+  patient: 2,
+  common: 3
 }
 
 export const relationalStatus = {

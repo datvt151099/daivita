@@ -141,7 +141,7 @@ router.post('/remove-follower', async (req, res) => {
           isValid: false
         }
       })
-    } else if (type === followTypes.doctor || type === followTypes.relative) {
+    } else if (type === followTypes.doctor) {
       await Notification.updateMany({
         fromUserId: actionUserId,
         toUserId: userId,
@@ -151,6 +151,26 @@ router.post('/remove-follower', async (req, res) => {
           isValid: false
         }
       })
+    } else if (type === followTypes.relative) {
+      await Promise.all([
+        Notification.updateMany({
+        fromUserId: userId,
+        toUserId: actionUserId,
+        type: notifyTypes.index
+      }, {
+        $set: {
+          isValid: false
+        }
+      }),
+        Notification.updateMany({
+        fromUserId: actionUserId,
+        toUserId: userId,
+        type: notifyTypes.index
+      }, {
+        $set: {
+          isValid: false
+        }
+      })])
     }
 
     result.status = true;
@@ -188,8 +208,8 @@ router.post('/unfollow-patient', async (req, res) => {
       }
     })
     await Notification.updateMany({
-      fromUserId: actionUserId,
-      toUserId: patientId,
+      fromUserId: patientId,
+      toUserId: actionUserId,
       type: notifyTypes.index
     }, {
       $set: {
