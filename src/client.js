@@ -15,6 +15,7 @@ import queryString from 'query-string';
 import { createPath } from 'history';
 import App from './components/App';
 import createFetch from './createFetch';
+import createApolloClient from './core/createApolloClient';
 import history from './history';
 import { updateMeta } from './DOMUtils';
 import router from './router';
@@ -29,6 +30,8 @@ const insertCss = (...styles) => {
   };
 };
 
+const apolloClient = createApolloClient();
+
 // Global (context) variables that can be easily accessed from any React component
 // https://facebook.github.io/react/docs/context.html
 const context = {
@@ -36,6 +39,7 @@ const context = {
   fetch: createFetch(fetch, {
     baseUrl: window.App.apiUrl,
   }),
+  client: apolloClient
 };
 
 const container = document.getElementById('app');

@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
     status: false,
     message: "Tài khoản chưa đăng ký!"
   };
-  const { phone, password, token } = req.body;
+  const { phone, password } = req.body;
 
   try {
     const user = await User.findOne({ phone });
@@ -32,8 +32,6 @@ router.post('/login', async (req, res) => {
     if (user && user.inAccount) {
       const isMatch = await user.comparePassword(password);
       if (isMatch) {
-        user.registrationToken = token;
-        await user.save();
         const userInfo = formatUserData(user);
         const {accessToken, expiresIn} = generateToken({_id: userInfo._id});
         result.status = true;

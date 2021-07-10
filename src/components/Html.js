@@ -27,7 +27,7 @@ export default function Html({
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
-        <title>{title}</title>
+        <title>Daivita</title>
         <meta name="description" content={description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {scripts.map(script => (

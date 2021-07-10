@@ -10,7 +10,7 @@
 @import '../variables.css';
 
 :root {
-  --brand-color: #61dafb;
+  --brand-color: #23d0d5;
 }
 
 .root {
@@ -31,7 +31,8 @@
 }
 
 .brandTxt {
-  margin-left: 10px;
+  margin-left: 2px;
+  color: color(var(--brand-color) lightness(+10%));
 }
 
 .banner {

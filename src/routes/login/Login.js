@@ -86,15 +86,15 @@ export default function Login({ title }) {
           </a>
         </div>
         <strong className={s.lineThrough}>OR</strong>
-        <form method="post">
+        <form method="post" action='/login' >
           <div className={s.formGroup}>
-            <label className={s.label} htmlFor="usernameOrEmail">
+            <label className={s.label} htmlFor="phone">
               Username or email address:
               <input
                 className={s.input}
-                id="usernameOrEmail"
+                id="phone"
                 type="text"
-                name="usernameOrEmail"
+                name="phone"
                 autoFocus // eslint-disable-line jsx-a11y/no-autofocus
               />
             </label>

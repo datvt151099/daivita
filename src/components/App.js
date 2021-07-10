@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { ApolloProvider } from '@apollo/react-hooks';
 import PropTypes from 'prop-types';
 
 import StyleContext from 'isomorphic-style-loader/StyleContext';
@@ -40,11 +41,14 @@ export default function App({ context, insertCss, children }) {
   // NOTE: If you need to add or modify header, footer etc. of the app,
   // please do that inside the Layout component.
   return (
-    <StyleContext.Provider value={{ insertCss }}>
-      <ApplicationContext.Provider value={{ context }}>
-        {React.Children.only(children)}
-      </ApplicationContext.Provider>
-    </StyleContext.Provider>
+    // eslint-disable-next-line react/prop-types
+    <ApolloProvider client={context.client}>
+      <StyleContext.Provider value={{ insertCss }}>
+        <ApplicationContext.Provider value={{ context }}>
+          {React.Children.only(children)}
+        </ApplicationContext.Provider>
+      </StyleContext.Provider>
+    </ApolloProvider>
   );
 }
 
