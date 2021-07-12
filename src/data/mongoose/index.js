@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
 
-const mongoUri =  process.env.MONGO_URI || 'mongodb://localhost:27017';
+const mongoUri =  process.env.MONGO_URI || 'mongodb://localhost:27017/daivita?retryWrites=true&w=majority';
 const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
