@@ -1,6 +1,6 @@
 import * as _ from "lodash";
-import User from "../../models/User";
-import Paper from "../../models/Paper";
+import User from "../models/User";
+import Paper from "../models/Paper";
 
 export const addUser = async (root, {input}) => {
   const { phone, name, email} = input;

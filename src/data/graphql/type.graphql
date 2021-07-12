@@ -2,3 +2,30 @@ type Status {
   status: Boolean
   message: String
 }
+
+type User {
+  _id: String
+  name: String
+  phone: String
+  email: String
+}
+
+input UserInfo {
+  name: String
+  phone: String
+  email: String
+}
+
+type Paper {
+  _id: String
+  type: String
+  title: String
+  background: String
+  body: String
+  role: Int
+}
+
+type PaperResult {
+  total: Int
+  items: [Paper]
+}

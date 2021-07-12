@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import Promise from "bluebird";
-import User from "../../models/User";
-import Paper from "../../models/Paper";
+import User from "../models/User";
+import Paper from "../models/Paper";
 
 export const getUsers = () => User.find({});
 

@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from 'graphql-tools';
 import { merge } from 'lodash';
 import type from './graphql/type.graphql';
-import * as user from './graphql/User/schema';
+import * as user from './graphql/schema';
 
 const RootQuery = [
   `

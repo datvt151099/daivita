@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
 
-const mongoUri = process.env.MONGO_URI;
+const mongoUri =  process.env.MONGO_URI || 'mongodb://localhost:27017';
 const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
