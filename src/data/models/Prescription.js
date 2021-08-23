@@ -6,10 +6,11 @@ const schema = new mongoose.Schema({
   createdBy: { type: String },
   creatorName: { type: String },
   patientId: { type: String },
+  diagnose: { type: String },
   medicines: [{
     name: { type: String },
-    amount: { type: String },
-    note: { type: String }
+    dose: { type: String },
+    total: { type: String },
   }],
   note: { type: String },
 }, {collection: 'prescription'});

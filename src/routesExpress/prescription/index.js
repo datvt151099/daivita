@@ -9,6 +9,7 @@ const router = new Router();
 router.post('/create-prescription', async (req, res) => {
   const {
     patientId,
+    diagnose,
     medicines,
     note,
   } = req.body;
@@ -22,6 +23,7 @@ router.post('/create-prescription', async (req, res) => {
       createdBy,
       creatorName,
       patientId,
+      diagnose,
       medicines,
       note,
     })
@@ -40,6 +42,7 @@ router.post('/create-prescription', async (req, res) => {
 router.post('/edit-prescription', async (req, res) => {
   const {
     medicines,
+    diagnose,
     note,
     prescriptionId,
   } = req.body;
@@ -49,6 +52,7 @@ router.post('/edit-prescription', async (req, res) => {
         $set: {
           ...(note && {note}),
           ...(medicines && { medicines }),
+          ...(diagnose && { diagnose }),
           updatedAt: +moment().format('X')
         }
       })
@@ -109,6 +113,7 @@ router.post('/get-prescription-history', async (req, res) => {
           createdBy: true,
           creatorName: '$user.fullName',
           patientId: true,
+          diagnose: true,
           medicines: true,
           note: true,
         }

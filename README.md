@@ -1,4 +1,5 @@
 ## Daivita
+
 ....
 
 ## Getting Started
@@ -43,7 +44,6 @@ Node.js server (`node build/server.js`) and
 > [http://localhost:3001/](http://localhost:3001/) — Browsersync control panel
 > (UI)
 
-
 ### How to Build, Test, Deploy
 
 If you need just to build the app (without running a dev server), simply run:
@@ -81,4 +81,84 @@ To launch unit tests:
 ```shell
 $ yarn run test          # Run unit tests with Jest
 $ yarn run test-watch    # Launch unit test runner and start watching for changes
+```
+
+## Hướng dẫn chạy ứng dụng Daivita
+
+### Cài đặt môi trường
+
+- NodeJS (Link tham khảo: https://nodejs.org/en/download/)
+- MongoDB (Link tham khảo: https://docs.mongodb.com/manual/installation/)
+- Cài đặt môi trường để chạy ứng dụng react-native (Link tham khảo: https://reactnative.dev/docs/environment-setup)
+
+### Khởi động server
+
+#### 1. Điều hướng đến thư mục chứa mã nguồn daivita-server
+
+```shell
+$ cd SOURCE/daivita-server
+```
+
+#### 2. Cài đặt node modules
+
+```shell
+$ npm install
+```
+
+#### 3. Build và khởi động server
+
+```shell
+$ npm start
+```
+
+NOTE: Có thể dùng 1 câu lệnh
+
+```shell
+$ cd SOURCE/daivita-server && npm all
+```
+
+### Khởi động ứng dụng Android, iOS
+
+#### 1. Điều hướng đến thư mục chứa mã nguồn daivita-app
+
+```shell
+$ cd SOURCE/daivita-app
+```
+
+#### 2. Cài đặt node modules
+
+```shell
+$ npm install
+```
+
+#### 3. Cài đặt pod
+
+```shell
+$ cd ios && pod install && cd ..
+```
+
+#### 4. Chạy ứng dụng trên Android
+
+```shell
+$ npm android
+```
+
+#### 5. Chạy ứng dụng trên iOS
+
+```shell
+$ npm ios
+```
+
+NOTE: Có thể dùng 1 câu lệnh
+
+- Chạy ứng dụng trên Android
+
+```shell
+$ cd SOURCE/daivita-app && npm all && npm android
+```
+
+- Chạy ứng dụng trên iOS
+
+```shell
+$ cd SOURCE/daivita-app && npm all && npm ios
 ```

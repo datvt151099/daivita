@@ -105,7 +105,7 @@ const genIndexNotification = async ({userId, measureAt, index, lowIndex, highInd
     if (followers.length) {
       const fromInfo = await User.findOne({_id: userId});
       const title = "Đường huyết";
-      const body = `Cảnh báo đường huyết bất thường: bệnh nhân ${fromInfo.fullName}`;
+      const body = `Cảnh báo đường huyết bất thường: bệnh nhân ${fromInfo.fullName}.`;
       const payload = JSON.stringify({
         patientId: userId
       });
